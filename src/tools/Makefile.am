@@ -1,1 +1,1 @@
-SUBDIRS = daemon osd_term
+SUBDIRS = daemon osd_term cli

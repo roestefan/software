@@ -6,6 +6,7 @@ lib_LTLIBRARIES = libopensocdebug.la
 libopensocdebug_la_SOURCES = context.c \
 	connection.c \
 	connection-standalone.c \
+	connection-daemon.c \
 	system-info.c \
 	regaccess.c \
 	control.c

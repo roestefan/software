@@ -1,6 +1,8 @@
 #include "osd-private.h"
 #include <libglip.h>
 
+#include <stdio.h>
+
 OSD_EXPORT
 int osd_connect(struct osd_context *ctx) {
     pthread_mutex_init(&ctx->reg_access.lock, 0);
@@ -9,10 +11,13 @@ int osd_connect(struct osd_context *ctx) {
     int rv = ctx->functions.connect(ctx);
 
     if (rv != 0) {
-        return OSD_E_GENERIC;
+        return rv;
     }
 
-    osd_system_enumerate(ctx);
+    rv = osd_system_enumerate(ctx);
+    if (rv != OSD_SUCCESS) {
+        return rv;
+    }
 
     control_init(ctx);
 
@@ -25,15 +30,38 @@ int osd_send_packet(struct osd_context *ctx, uint16_t *data,
     return ctx->functions.send(ctx, data, size);
 }
 
-int osd_send_packet_standalone(struct osd_context *ctx, uint16_t *packet,
-                               size_t size) {
-    struct glip_ctx *gctx = ctx->ctx.standalone->glip_ctx;
+void osd_handle_packet(struct osd_context *ctx, uint16_t *packet,
+                       size_t size) {
+    uint8_t type = (packet[1] >> 10);
 
-    uint16_t *data = packet - 1;
-    data[0] = size;
+    if ((type >> 4) == 0) {
+        // Register access
+        pthread_mutex_lock(&ctx->reg_access.lock);
 
-    size_t actual;
-    glip_write_b(gctx, 0, (size+1)*2, (void*) data, &actual, 0);
+        memcpy(&ctx->reg_access.resp_packet, packet, size*2);
 
-    return OSD_SUCCESS;
+        ctx->reg_access.size = size;
+
+        pthread_cond_signal(&ctx->reg_access.cond_complete);
+
+        pthread_mutex_unlock(&ctx->reg_access.lock);
+    } else {
+        uint16_t mod_id = packet[1] & 0x3ff;
+        size_t ev_size = (type & 0xf);
+
+        if (size != ev_size + 2) {
+            fprintf(stderr, "Incorrect event size packet received\n");
+            return;
+        }
+
+        if ((type >> 4) == OSD_EVENT_PACKET) {
+            void *parg = ctx->module_handlers[mod_id]->packet_handler.arg;
+            if (!ctx->module_handlers[mod_id]->packet_handler.call) {
+                fprintf(stderr, "No module handler\n");
+                return;
+            }
+            ctx->module_handlers[mod_id]->packet_handler.call(ctx, parg, packet, size);
+        } else if ((type >> 4) == OSD_EVENT_TRACE) {
+        }
+    }
 }

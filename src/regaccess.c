@@ -2,7 +2,8 @@
 
 #include <assert.h>
 
-static int reg_access(struct osd_context *ctx, uint16_t* packet,
+OSD_EXPORT
+int osd_reg_access(struct osd_context *ctx, uint16_t* packet,
                       size_t req_size, size_t *resp_size) {
 
     pthread_mutex_lock(&ctx->reg_access.lock);
@@ -11,7 +12,6 @@ static int reg_access(struct osd_context *ctx, uint16_t* packet,
 
     pthread_cond_wait(&ctx->reg_access.cond_complete,
                       &ctx->reg_access.lock);
-    pthread_mutex_unlock(&ctx->reg_access.lock);
 
     if (*resp_size < ctx->reg_access.size) {
         return OSD_E_GENERIC;
@@ -20,6 +20,7 @@ static int reg_access(struct osd_context *ctx, uint16_t* packet,
     *resp_size = ctx->reg_access.size;
 
     memcpy(packet, ctx->reg_access.resp_packet, *resp_size*2);
+    pthread_mutex_unlock(&ctx->reg_access.lock);
 
     return OSD_SUCCESS;
 }
@@ -36,7 +37,7 @@ int osd_reg_read16(struct osd_context *ctx, uint16_t mod,
     packet[1] = (REG_READ16 << 10);
     packet[2] = addr;
 
-    reg_access(ctx, packet, 3, &size);
+    osd_reg_access(ctx, packet, 3, &size);
 
     *value = packet[2];
 
@@ -55,7 +56,7 @@ int osd_reg_write16(struct osd_context *ctx, uint16_t mod,
     packet[2] = addr;
     packet[3] = value;
 
-    reg_access(ctx, packet, 4, &size);
+    osd_reg_access(ctx, packet, 4, &size);
 
     return OSD_SUCCESS;
 }

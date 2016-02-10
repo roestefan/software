@@ -22,6 +22,7 @@ struct osd_system_info {
     uint16_t identifier;
     uint16_t max_pkt_len;
     uint16_t num_modules;
+    uint16_t num_memories;
     struct osd_module_info modules[];
 };
 
@@ -31,7 +32,10 @@ struct osd_context_standalone {
 };
 
 struct osd_context_daemon {
-
+    char* host;
+    int port;
+    int socket;
+    pthread_t receiver_thread;
 };
 
 struct osd_mode_functions {
@@ -52,7 +56,7 @@ struct osd_context {
         pthread_mutex_t lock;
         pthread_cond_t cond_complete;
         size_t size;
-        uint8_t resp_packet[10];
+        uint16_t resp_packet[10];
     } reg_access;
 
     struct osd_system_info *system_info;
@@ -61,9 +65,14 @@ struct osd_context {
 };
 
 int osd_connect_standalone(struct osd_context *ctx);
+int osd_connect_daemon(struct osd_context *ctx);
 
 int osd_send_packet_standalone(struct osd_context *ctx, uint16_t *data,
                                size_t size);
+int osd_send_packet_daemon(struct osd_context *ctx, uint16_t *data,
+                               size_t size);
+
+void osd_handle_packet(struct osd_context *ctx, uint16_t *packet, size_t size);
 
 int osd_system_enumerate(struct osd_context *ctx);
 
@@ -94,6 +103,7 @@ struct module_handler {
 };
 
 void control_init(struct osd_context *ctx);
-int standalone_claim(struct osd_context *ctx, uint16_t id);
+int claim_standalone(struct osd_context *ctx, uint16_t id);
+int claim_daemon(struct osd_context *ctx, uint16_t id);
 
 #endif

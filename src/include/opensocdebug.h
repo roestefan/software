@@ -70,13 +70,15 @@ struct osd_dp {
 enum osd_module_types {
     OSD_MOD_HOST = 0,
     OSD_MOD_SCM = 1,
-    OSD_MOD_DEM_UART = 2
+    OSD_MOD_DEM_UART = 2,
+    OSD_MOD_MAM = 3
 };
 
 static const int OSD_SUCCESS = 0;
 static const int OSD_E_GENERIC = 1;
+static const int OSD_E_CANNOTENUMERATE = 2;
 
-static inline
+/*static inline
 struct osd_dp *osd_dp_alloc(size_t payload_size) {
     size_t size = sizeof(struct osd_dp) + payload_size * 2;
     uint16_t *packet = malloc(size + 2);
@@ -108,11 +110,16 @@ int osd_dp_assemble(struct osd_dp* dp, uint16_t *data, size_t *size) {
     memcpy(&data[2], dp->payload, dp->payload_size*2);
 
     return OSD_SUCCESS;
-}
+}*/
+
+int osd_reset_system(struct osd_context *ctx, int halt_cores);
+int osd_start_cores(struct osd_context *ctx);
 
 int osd_send_packet(struct osd_context *ctx, uint16_t *data,
                     size_t size);
 
+int osd_reg_access(struct osd_context *ctx, uint16_t* packet,
+                      size_t req_size, size_t *resp_size);
 int osd_reg_read16(struct osd_context *ctx, uint16_t mod,
                    uint16_t addr, uint16_t *value);
 int osd_reg_write16(struct osd_context *ctx, uint16_t mod,
@@ -122,27 +129,31 @@ int osd_get_system_identifier(struct osd_context *ctx, uint16_t *id);
 int osd_get_max_pkt_len(struct osd_context *ctx, uint16_t *len);
 int osd_get_num_modules(struct osd_context *ctx, uint16_t *n);
 
-int osd_get_module_addr(struct osd_context *ctx, uint16_t id,
-                        uint16_t *addr);
-
-int osd_get_module_name(struct osd_context *ctx, uint16_t id,
+int osd_get_module_name(struct osd_context *ctx, uint16_t addr,
                         char **name);
 
-int osd_module_is_terminal(struct osd_context *ctx, uint16_t id);
+int osd_module_is_terminal(struct osd_context *ctx, uint16_t addr);
 
-int osd_module_claim(struct osd_context *ctx, uint16_t id);
+int osd_module_get_scm(struct osd_context *ctx, uint16_t *addr);
+int osd_module_get_memories(struct osd_context *ctx,
+                            uint16_t **memories, size_t *num);
 
-enum osd_incoming_type {
-    OSD_INCOMING_PACKET = 1,
-    OSD_INCOMING_TRACE = 2
+int osd_module_claim(struct osd_context *ctx, uint16_t addr);
+
+enum osd_event_type {
+    OSD_EVENT_PACKET = 1,
+    OSD_EVENT_TRACE = 2
 };
 
 typedef void (*osd_incoming_handler)(struct osd_context *ctx,
         void* arg, uint16_t* packet, size_t size);
 
 int osd_module_register_handler(struct osd_context *ctx, uint16_t id,
-                                enum osd_incoming_type type, void *arg,
+                                enum osd_event_type type, void *arg,
                                 osd_incoming_handler handler);
+
+int osd_memory_write(struct osd_context *ctx, uint64_t addr, uint8_t* data, size_t size);
+int osd_memory_read(struct osd_context *ctx, uint64_t addr, uint8_t* data, size_t size);
 
 #ifdef __cplusplus
 } /* extern "C" */

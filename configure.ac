@@ -84,6 +84,7 @@ AC_CONFIG_FILES([
         src/tools/Makefile
         src/tools/daemon/Makefile
         src/tools/osd_term/Makefile
+        src/tools/cli/Makefile
 ])
 
 AC_OUTPUT

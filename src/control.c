@@ -17,17 +17,21 @@ int osd_module_claim(struct osd_context *ctx, uint16_t id) {
     return ctx->functions.claim(ctx, id);
 }
 
-int standalone_claim(struct osd_context *ctx, uint16_t id) {
+int claim_standalone(struct osd_context *ctx, uint16_t id) {
+    return 0;
+}
+
+int claim_daemon(struct osd_context *ctx, uint16_t id) {
     return 0;
 }
 
 OSD_EXPORT
 int osd_module_register_handler(struct osd_context *ctx, uint16_t id,
-                                enum osd_incoming_type type, void *arg,
+                                enum osd_event_type type, void *arg,
                                 osd_incoming_handler handler) {
     struct module_callback *cb;
 
-    if (type == OSD_INCOMING_PACKET) {
+    if (type == OSD_EVENT_PACKET) {
         cb = &ctx->module_handlers[id]->packet_handler;
     } else {
         return -1;
@@ -37,4 +41,36 @@ int osd_module_register_handler(struct osd_context *ctx, uint16_t id,
     cb->arg = arg;
 
     return 0;
+}
+
+OSD_EXPORT
+int osd_reset_system(struct osd_context *ctx, int halt_cores) {
+    uint16_t scm;
+
+    if (osd_module_get_scm(ctx, &scm) != OSD_SUCCESS) {
+        return OSD_E_GENERIC;
+    }
+
+    osd_reg_write16(ctx, scm, 0x203, 0x3);
+
+    if (halt_cores) {
+        osd_reg_write16(ctx, scm, 0x203, 0x2);
+    } else {
+        osd_reg_write16(ctx, scm, 0x203, 0x0);
+    }
+
+    return OSD_SUCCESS;
+}
+
+OSD_EXPORT
+int osd_start_cores(struct osd_context *ctx) {
+    uint16_t scm;
+
+    if (osd_module_get_scm(ctx, &scm) != OSD_SUCCESS) {
+        return OSD_E_GENERIC;
+    }
+
+    osd_reg_write16(ctx, scm, 0x203, 0x0);
+
+    return OSD_SUCCESS;
 }

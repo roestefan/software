@@ -99,7 +99,7 @@ static void serve_fd(int fd)
 
 
     while (true) {
-        size_t n;
+        int n;
 
         if (poll(pfds, 2, -1) == -1)
             err(1, "poll");
@@ -137,7 +137,6 @@ static void serve_fd(int fd)
 
 int main(int argc, char *argv[])
 {
-    int listen_fd;
     char *socket;
 
     switch (argc) {

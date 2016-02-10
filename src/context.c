@@ -11,6 +11,11 @@ int osd_new_standalone(struct osd_context_standalone **ctx,
                        size_t num_mode_options,
                        struct osd_mode_option *options);
 
+static
+int osd_new_daemon(struct osd_context_daemon **ctx,
+                   struct osd_mode_functions *fnc,
+                   size_t num_mode_options,
+                   struct osd_mode_option *options);
 
 OSD_EXPORT
 int osd_new(struct osd_context **ctx, enum osd_mode mode,
@@ -25,7 +30,10 @@ int osd_new(struct osd_context **ctx, enum osd_mode mode,
 
     if (mode == OSD_MODE_STANDALONE) {
         return osd_new_standalone(&c->ctx.standalone, &c->functions,
-                           num_mode_options, options);
+                                  num_mode_options, options);
+    } else {
+        return osd_new_daemon(&c->ctx.daemon, &c->functions,
+                              num_mode_options, options);
     }
 
     return OSD_SUCCESS;
@@ -59,7 +67,26 @@ int osd_new_standalone(struct osd_context_standalone **ctx,
 
     fnc->connect = osd_connect_standalone;
     fnc->send = osd_send_packet_standalone;
-    fnc->claim = standalone_claim;
+    fnc->claim = claim_standalone;
 
     return glip_new(&c->glip_ctx, backend_name, glip_options, num_glip_options);
+}
+
+static
+int osd_new_daemon(struct osd_context_daemon **ctx,
+                   struct osd_mode_functions *fnc,
+                   size_t num_mode_options,
+                   struct osd_mode_option *options) {
+
+    struct osd_context_daemon *c = malloc(sizeof(struct osd_context_daemon));
+
+    *ctx = c;
+
+    c->host = strdup("localhost");
+    c->port = 7450;
+    fnc->connect = osd_connect_daemon;
+    fnc->send = osd_send_packet_daemon;
+    fnc->claim = claim_daemon;
+
+    return 0;
 }
