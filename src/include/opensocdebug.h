@@ -126,16 +126,18 @@ int osd_reg_write16(struct osd_context *ctx, uint16_t mod,
                     uint16_t addr, uint16_t value);
 
 int osd_get_system_identifier(struct osd_context *ctx, uint16_t *id);
-int osd_get_max_pkt_len(struct osd_context *ctx, uint16_t *len);
+size_t osd_get_max_pkt_len(struct osd_context *ctx);
 int osd_get_num_modules(struct osd_context *ctx, uint16_t *n);
 
 int osd_get_module_name(struct osd_context *ctx, uint16_t addr,
                         char **name);
+int osd_print_module_info(struct osd_context *ctx, uint16_t addr,
+                          FILE *fd, int indent);
 
 int osd_module_is_terminal(struct osd_context *ctx, uint16_t addr);
 
-int osd_module_get_scm(struct osd_context *ctx, uint16_t *addr);
-int osd_module_get_memories(struct osd_context *ctx,
+int osd_get_scm(struct osd_context *ctx, uint16_t *addr);
+int osd_get_memories(struct osd_context *ctx,
                             uint16_t **memories, size_t *num);
 
 int osd_module_claim(struct osd_context *ctx, uint16_t addr);

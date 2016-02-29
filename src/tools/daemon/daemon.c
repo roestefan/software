@@ -52,6 +52,7 @@ int main(int argc, char* argv[]) {
         osd_get_module_name(ctx, i, &name);
 
         INFO(" [%d]: %s", i, name);
+        osd_print_module_info(ctx, i, stdout, 3);
 
         free(name);
     }

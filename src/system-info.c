@@ -33,14 +33,14 @@ int osd_system_enumerate(struct osd_context *ctx) {
     osd_reg_read16(ctx, 1, 0x202, &ctx->system_info->max_pkt_len);
 
     ctx->system_info->modules[0].addr = 0;
-    ctx->system_info->modules[0].identifier = 0;
+    ctx->system_info->modules[0].type = 0;
     ctx->system_info->modules[0].version = 0;
 
     for (size_t i = 1; i < mod_num; i++) {
         struct osd_module_info *mod = &ctx->system_info->modules[i];
         mod->addr = i;
-        osd_reg_read16(ctx, i, 0, &mod->identifier);
-        if (mod->identifier == OSD_MOD_MAM) {
+        osd_reg_read16(ctx, i, 0, &mod->type);
+        if (mod->type == OSD_MOD_MAM) {
             ctx->system_info->num_memories++;
         }
         osd_reg_read16(ctx, i, 1, &mod->version);
@@ -49,8 +49,8 @@ int osd_system_enumerate(struct osd_context *ctx) {
     return OSD_SUCCESS;
 }
 
-int osd_module_get_scm(struct osd_context *ctx, uint16_t *addr) {
-    if (ctx->system_info->modules[1].identifier != OSD_MOD_SCM) {
+int osd_get_scm(struct osd_context *ctx, uint16_t *addr) {
+    if (ctx->system_info->modules[1].type != OSD_MOD_SCM) {
         return OSD_E_GENERIC;
     }
 
@@ -70,9 +70,8 @@ int osd_get_system_identifier(struct osd_context *ctx, uint16_t *id) {
 }
 
 OSD_EXPORT
-int osd_get_max_pkt_len(struct osd_context *ctx, uint16_t *len) {
-    *len = ctx->system_info->max_pkt_len;
-    return OSD_SUCCESS;
+size_t osd_get_max_pkt_len(struct osd_context *ctx) {
+    return ctx->system_info->max_pkt_len;
 }
 
 OSD_EXPORT
@@ -84,7 +83,7 @@ int osd_get_num_modules(struct osd_context *ctx, uint16_t *n) {
 OSD_EXPORT
 int osd_get_module_name(struct osd_context *ctx, uint16_t id,
                         char **name) {
-    uint16_t type = ctx->system_info->modules[id].identifier;
+    uint16_t type = ctx->system_info->modules[id].type;
     if (type > modules_max_id) {
         *name = strdup("UNKNOWN");
     }
@@ -94,8 +93,31 @@ int osd_get_module_name(struct osd_context *ctx, uint16_t id,
 }
 
 OSD_EXPORT
+int osd_print_module_info(struct osd_context *ctx, uint16_t addr,
+                          FILE* fh, int indent) {
+    struct osd_module_info *mod = &ctx->system_info->modules[addr];
+
+    if (!mod) {
+        return OSD_E_GENERIC;
+    }
+
+    char *indentstring = malloc(indent+1);
+    memset(indentstring, 0x20, indent);
+    indentstring[indent] = 0;
+
+    fprintf(fh, "%sversion: %04x\n", indentstring, mod->version);
+
+    switch (mod->type) {
+        default:
+            break;
+    }
+
+    return OSD_SUCCESS;
+}
+
+OSD_EXPORT
 int osd_module_is_terminal(struct osd_context *ctx, uint16_t id) {
-    uint16_t type = ctx->system_info->modules[id].identifier;
+    uint16_t type = ctx->system_info->modules[id].type;
 
     switch (type) {
         case OSD_MOD_DEM_UART:

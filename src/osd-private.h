@@ -14,7 +14,7 @@ struct module_handler;
 
 struct osd_module_info {
     uint16_t addr;
-    uint16_t identifier;
+    uint16_t type;
     uint16_t version;
 };
 

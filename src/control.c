@@ -47,7 +47,7 @@ OSD_EXPORT
 int osd_reset_system(struct osd_context *ctx, int halt_cores) {
     uint16_t scm;
 
-    if (osd_module_get_scm(ctx, &scm) != OSD_SUCCESS) {
+    if (osd_get_scm(ctx, &scm) != OSD_SUCCESS) {
         return OSD_E_GENERIC;
     }
 
@@ -66,7 +66,7 @@ OSD_EXPORT
 int osd_start_cores(struct osd_context *ctx) {
     uint16_t scm;
 
-    if (osd_module_get_scm(ctx, &scm) != OSD_SUCCESS) {
+    if (osd_get_scm(ctx, &scm) != OSD_SUCCESS) {
         return OSD_E_GENERIC;
     }
 
