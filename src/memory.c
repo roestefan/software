@@ -18,32 +18,28 @@ static int memory_write_bulk(struct osd_context *ctx, uint16_t mod,
     uint16_t *header = &packet[2];
 
     header[0] = 0xc000 | size;
-    header[1] = addr & 0xff;
+    header[1] = addr & 0xffff;
     if (mem->addr_width > 16)
-        header[2] = (addr >> 8) & 0xff;
+        header[2] = (addr >> 16) & 0xffff;
     if (mem->addr_width > 32)
-        header[3] = (addr >> 16) & 0xff;
+        header[3] = (addr >> 32) & 0xffff;
     if (mem->addr_width > 48)
-        header[4] = (addr >> 16) & 0xff;
+        header[4] = (addr >> 48) & 0xffff;
 
     // Static for packets
     packet[0] = mod;
     packet[1] = 1 << 14;
 
-    for (int i = 0; i < hlen + 2; i++)
-        printf("  %04x\n", packet[i]);
-
     osd_send_packet(ctx, packet, hlen + 2);
 
     size_t numwords = size/2;
-    printf("numwords: %d\n", numwords);
     int curword = 0;
 
     for (int i = 0; i < numwords; i++) {
         packet[2+curword] = (data[i*2] << 8) | data[i*2+1];
         curword++;
 
-        if (curword > wordsperpacket) {
+        if (curword == wordsperpacket) {
             osd_send_packet(ctx, packet, psize);
             curword = 0;
         }
