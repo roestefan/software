@@ -1,14 +1,12 @@
 #include "osd-private.h"
 #include <libglip.h>
 
-uint16_t modules_max_id;
-
-const struct module_types module_lookup[3] = {
+const struct module_types module_lookup[4] = {
         { .name = "HOST" },
         { .name = "SCM" },
-        { .name = "DEM - UART" }
+        { .name = "DEM - UART" },
+        { .name = "MAM" }
 };
-
 
 int osd_system_enumerate(struct osd_context *ctx) {
     uint16_t mod1_id, mod_num;
@@ -42,7 +40,34 @@ int osd_system_enumerate(struct osd_context *ctx) {
         osd_reg_read16(ctx, i, 0, &mod->type);
         if (mod->type == OSD_MOD_MAM) {
             ctx->system_info->num_memories++;
+
+            struct osd_memory_descriptor *mem;
+            mem = calloc(1, sizeof(struct osd_memory_descriptor));
+            mod->descriptor.memory = mem;
+
+            osd_reg_read16(ctx, i, 0x200, &mem->data_width);
+            osd_reg_read16(ctx, i, 0x201, &mem->addr_width);
+
+            uint16_t r;
+            osd_reg_read16(ctx, i, 0x202, &r);
+            mem->base_addr = r;
+            osd_reg_read16(ctx, i, 0x203, &r);
+            mem->base_addr |= ((uint64_t) r << 16);
+            osd_reg_read16(ctx, i, 0x204, &r);
+            mem->base_addr |= ((uint64_t) r << 32);
+            osd_reg_read16(ctx, i, 0x205, &r);
+            mem->base_addr |= ((uint64_t) r << 48);
+
+            osd_reg_read16(ctx, i, 0x206, &r);
+            mem->size = r;
+            osd_reg_read16(ctx, i, 0x207, &r);
+            mem->size |= ((uint64_t) r << 16);
+            osd_reg_read16(ctx, i, 0x208, &r);
+            mem->size |= ((uint64_t) r << 32);
+            osd_reg_read16(ctx, i, 0x209, &r);
+            mem->size |= ((uint64_t) r << 48);
         }
+
         osd_reg_read16(ctx, i, 1, &mod->version);
     }
 
@@ -58,9 +83,38 @@ int osd_get_scm(struct osd_context *ctx, uint16_t *addr) {
     return OSD_SUCCESS;
 }
 
-int osd_module_get_memories(struct osd_context *ctx,
+OSD_EXPORT
+int osd_get_memories(struct osd_context *ctx,
                             uint16_t **memories, size_t *num) {
 
+    *num = ctx->system_info->num_memories;
+
+    *memories = malloc(sizeof(uint16_t) * ctx->system_info->num_memories);
+
+    uint16_t num_mod = ctx->system_info->num_modules;
+
+    for (uint16_t i = 0, m = 0; (i < num_mod) && (m < *num); i++) {
+        if (ctx->system_info->modules[i].type == OSD_MOD_MAM) {
+            *memories[m++] = i;
+        }
+    }
+
+    return OSD_SUCCESS;
+}
+
+OSD_EXPORT
+int osd_get_memory_descriptor(struct osd_context *ctx, uint16_t addr,
+                              struct osd_memory_descriptor **desc) {
+    if (ctx->system_info->modules[addr].type != OSD_MOD_MAM) {
+        return OSD_E_GENERIC;
+    }
+
+    size_t sz = sizeof(struct osd_memory_descriptor);
+    *desc = malloc(sz);
+
+    memcpy(*desc, ctx->system_info->modules[addr].descriptor.memory, sz);
+
+    return OSD_SUCCESS;
 }
 
 OSD_EXPORT
@@ -107,7 +161,17 @@ int osd_print_module_info(struct osd_context *ctx, uint16_t addr,
 
     fprintf(fh, "%sversion: %04x\n", indentstring, mod->version);
 
+    struct osd_memory_descriptor *mem;
     switch (mod->type) {
+        case OSD_MOD_MAM:
+            mem = mod->descriptor.memory;
+            fprintf(fh, "%sdata width: %d, ", indentstring,
+                    mem->data_width);
+            fprintf(fh, "address width: %d\n", mem->addr_width);
+            fprintf(fh, "%sbase address: 0x%016x, ", indentstring,
+                    mem->base_addr);
+            fprintf(fh, "memory size: %d Bytes\n", mem->size);
+            break;
         default:
             break;
     }

@@ -74,6 +74,13 @@ enum osd_module_types {
     OSD_MOD_MAM = 3
 };
 
+struct osd_memory_descriptor {
+    uint64_t base_addr;
+    uint64_t size;
+    uint16_t data_width;
+    uint16_t addr_width;
+};
+
 static const int OSD_SUCCESS = 0;
 static const int OSD_E_GENERIC = 1;
 static const int OSD_E_CANNOTENUMERATE = 2;
@@ -140,6 +147,9 @@ int osd_get_scm(struct osd_context *ctx, uint16_t *addr);
 int osd_get_memories(struct osd_context *ctx,
                             uint16_t **memories, size_t *num);
 
+int osd_get_memory_descriptor(struct osd_context *, uint16_t addr,
+                              struct osd_memory_descriptor **desc);
+
 int osd_module_claim(struct osd_context *ctx, uint16_t addr);
 
 enum osd_event_type {
@@ -154,8 +164,8 @@ int osd_module_register_handler(struct osd_context *ctx, uint16_t id,
                                 enum osd_event_type type, void *arg,
                                 osd_incoming_handler handler);
 
-int osd_memory_write(struct osd_context *ctx, uint64_t addr, uint8_t* data, size_t size);
-int osd_memory_read(struct osd_context *ctx, uint64_t addr, uint8_t* data, size_t size);
+int osd_memory_write(struct osd_context *ctx, uint16_t mod, uint64_t addr, uint8_t* data, size_t size);
+int osd_memory_read(struct osd_context *ctx, uint16_t mod, uint64_t addr, uint8_t* data, size_t size);
 
 #ifdef __cplusplus
 } /* extern "C" */

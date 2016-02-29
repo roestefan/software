@@ -38,6 +38,7 @@ int osd_reg_read16(struct osd_context *ctx, uint16_t mod,
     packet[2] = addr;
 
     osd_reg_access(ctx, packet, 3, &size);
+    assert(size == 3);
 
     *value = packet[2];
 
