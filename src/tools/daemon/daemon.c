@@ -139,6 +139,10 @@ int main(int argc, char* argv[]) {
                 data[0] = rsize;
 
                 rv = send(clientsocket, data, (rsize+1)*2, 0);
+            } else if ((packet[1] & 0xc000) == 0x4000) {
+                osd_send_packet(ctx, packet, size);
+            } else {
+                WARN("Dropped invalid egress packet\n");
             }
         }
 
