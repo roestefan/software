@@ -59,13 +59,13 @@ int osd_new(struct osd_context **ctx, enum osd_mode standalone,
 
 int osd_connect(struct osd_context *ctx);
 
-struct osd_dp {
+/*struct osd_dp {
     size_t payload_size;
     uint8_t type;
     uint16_t dest;
     uint16_t src;
     uint16_t payload[];
-};
+};*/
 
 enum osd_module_types {
     OSD_MOD_HOST = 0,
