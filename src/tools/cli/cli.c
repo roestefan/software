@@ -39,6 +39,12 @@ int main(int argc, char* argv[]) {
             osd_reset_system(ctx, haltcpus);
         } else if (!strcmp(cmd, "start")) {
             osd_start_cores(ctx);
+        } else if (!strcmp(cmd, "mem")) {
+            char *subcmd = strtok(NULL, " ");
+
+            if (!strcmp(subcmd, "test")) {
+                memory_tests(ctx);
+            }
         }
     }
 }
