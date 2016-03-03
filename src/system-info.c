@@ -168,9 +168,9 @@ int osd_print_module_info(struct osd_context *ctx, uint16_t addr,
             fprintf(fh, "%sdata width: %d, ", indentstring,
                     mem->data_width);
             fprintf(fh, "address width: %d\n", mem->addr_width);
-            fprintf(fh, "%sbase address: 0x%016x, ", indentstring,
+            fprintf(fh, "%sbase address: 0x%016lx, ", indentstring,
                     mem->base_addr);
-            fprintf(fh, "memory size: %d Bytes\n", mem->size);
+            fprintf(fh, "memory size: %ld Bytes\n", mem->size);
             break;
         default:
             break;

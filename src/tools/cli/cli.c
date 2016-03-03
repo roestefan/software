@@ -3,6 +3,7 @@
 #include <getopt.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include "cli.h"
 
 int main(int argc, char* argv[]) {
     struct osd_context *ctx;
