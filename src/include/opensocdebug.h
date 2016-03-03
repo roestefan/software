@@ -31,6 +31,8 @@
 #include <stdarg.h>
 #include <inttypes.h>
 #include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C" {
