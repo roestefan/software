@@ -6,6 +6,7 @@ static int memory_write_bulk(struct osd_context *ctx, uint16_t mod,
                              uint8_t* data, size_t size) {
     uint16_t psize = osd_get_max_pkt_len(ctx);
     uint16_t wordsperpacket = psize - 2;
+    size_t numwords = size/2;
 
     uint16_t *pdata = malloc((psize+1)*2);
     uint16_t *packet = &pdata[1];
@@ -17,7 +18,7 @@ static int memory_write_bulk(struct osd_context *ctx, uint16_t mod,
     hlen += ((mem->addr_width + 15) >> 4);
     uint16_t *header = &packet[2];
 
-    header[0] = 0xc000 | size;
+    header[0] = 0xc000 | numwords;
     header[1] = addr & 0xffff;
     if (mem->addr_width > 16)
         header[2] = (addr >> 16) & 0xffff;
@@ -32,7 +33,6 @@ static int memory_write_bulk(struct osd_context *ctx, uint16_t mod,
 
     osd_send_packet(ctx, packet, hlen + 2);
 
-    size_t numwords = size/2;
     int curword = 0;
 
     for (size_t i = 0; i < numwords; i++) {

@@ -13,10 +13,11 @@ static int memory_test(struct osd_context *ctx, uint16_t mod) {
     osd_get_memory_descriptor(ctx, mod, &desc);
     assert(desc);
 
+    // Bytes per block
     blocksize = desc->data_width >> 3;
 
     // Perform one aligned write of one word
-    addr = (desc->base_addr + (blocksize - 1)) % blocksize;
+    addr = desc->base_addr;
     size = blocksize;
     data = malloc(size);
     for (size_t i = 0; i < size; i++) data[i] = i & 0xff;
