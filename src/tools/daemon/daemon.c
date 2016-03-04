@@ -100,7 +100,7 @@ int main(int argc, char* argv[]) {
     while(1) {
         int clientsocket;
         struct sockaddr_in clientaddr;
-        size_t clientaddrlen;
+        socklen_t clientaddrlen;
 
         INFO("Wait for connection");
 
@@ -129,7 +129,7 @@ int main(int argc, char* argv[]) {
             if (rv == 0) {
                 break;
             }
-            assert(rv == size*2);
+            assert(rv == (int) size*2);
 
             if ((packet[1] & 0xc000) == 0) {
                 size_t rsize;

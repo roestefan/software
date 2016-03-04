@@ -72,7 +72,7 @@ static void* receiver_thread_function(void* arg) {
         size = *((uint16_t*) &packet[0]);
 
         rv = recv(dctx->socket, packet, size*2, 0);
-        assert(rv == size*2);
+        assert(rv == (int) size*2);
 
         osd_handle_packet(ctx, packet, size);
     }

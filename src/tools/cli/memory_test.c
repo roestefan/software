@@ -19,7 +19,7 @@ static int memory_test(struct osd_context *ctx, uint16_t mod) {
     addr = (desc->base_addr + (blocksize - 1)) % blocksize;
     size = blocksize;
     data = malloc(size);
-    for (int i = 0; i < size; i++) data[i] = i & 0xff;
+    for (size_t i = 0; i < size; i++) data[i] = i & 0xff;
 
     osd_memory_write(ctx, mod, addr, data, size);
 
