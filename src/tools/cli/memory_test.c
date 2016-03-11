@@ -24,6 +24,15 @@ static int memory_test(struct osd_context *ctx, uint16_t mod) {
 
     osd_memory_write(ctx, mod, addr, data, size);
 
+    // Write the next ten blocks
+    addr = desc->base_addr + blocksize;
+    size = blocksize * 10;
+    data = realloc(data, size);
+    for (size_t i = 0; i < size; i++) data[i] = i & 0xff;
+
+    osd_memory_write(ctx, mod, addr, data, size);
+
+
     return 0;
 }
 
