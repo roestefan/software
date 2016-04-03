@@ -87,48 +87,13 @@ static const int OSD_SUCCESS = 0;
 static const int OSD_E_GENERIC = 1;
 static const int OSD_E_CANNOTENUMERATE = 2;
 
-/*static inline
-struct osd_dp *osd_dp_alloc(size_t payload_size) {
-    size_t size = sizeof(struct osd_dp) + payload_size * 2;
-    uint16_t *packet = malloc(size + 2);
-    return (struct osd_dp*) &packet[1];
-}
-
-static inline
-int osd_dp_extract(struct osd_dp* dp, uint16_t *data, size_t size) {
-    dp->payload_size = size - 2;
-
-    dp->dest = data[0];
-    dp->type = data[1] >> 10;
-    dp->src = data[1] & 0x3ff;
-    memcpy(dp->payload, &data[2], size - 2);
-
-    return 0;
-}
-
-static inline
-int osd_dp_assemble(struct osd_dp* dp, uint16_t *data, size_t *size) {
-    if (*size < (dp->payload_size + 2)) {
-        return OSD_E_GENERIC;
-    }
-
-    *size = dp->payload_size + 2;
-
-    data[0] = dp->dest & 0x3ff;
-    data[1] = (dp->type << 10) | (dp->src & 0x3ff);
-    memcpy(&data[2], dp->payload, dp->payload_size*2);
-
-    return OSD_SUCCESS;
-}*/
 
 int osd_reset_system(struct osd_context *ctx, int halt_cores);
 int osd_start_cores(struct osd_context *ctx);
 
-int osd_send_packet(struct osd_context *ctx, uint16_t *data,
-                    size_t size);
+int osd_send_packet(struct osd_context *ctx, uint16_t *packet);
 
-int osd_reg_access(struct osd_context *ctx, uint16_t* packet,
-                      size_t req_size, size_t *resp_size);
+int osd_reg_access(struct osd_context *ctx, uint16_t* packet);
 int osd_reg_read16(struct osd_context *ctx, uint16_t mod,
                    uint16_t addr, uint16_t *value);
 int osd_reg_write16(struct osd_context *ctx, uint16_t mod,
@@ -160,7 +125,7 @@ enum osd_event_type {
 };
 
 typedef void (*osd_incoming_handler)(struct osd_context *ctx,
-        void* arg, uint16_t* packet, size_t size);
+        void* arg, uint16_t* packet);
 
 int osd_module_register_handler(struct osd_context *ctx, uint16_t id,
                                 enum osd_event_type type, void *arg,

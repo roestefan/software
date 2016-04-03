@@ -65,11 +65,11 @@ int terminal_open(struct terminal **term) {
 }
 
 void terminal_ingress(struct osd_context *ctx, void* mod_arg,
-                      uint16_t *packet, size_t len) {
+                      uint16_t *packet) {
     struct terminal *term = (struct terminal *) mod_arg;
 
-    if (len == 3) {
-        uint8_t c = packet[2] & 0xff;
+    if (packet[1] == 3) {
+        uint8_t c = packet[3] & 0xff;
         int rv = write(term->socket, &c, 1);
         (void) rv;
     }

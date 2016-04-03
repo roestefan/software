@@ -15,6 +15,6 @@ struct terminal;
 int terminal_open(struct terminal **term);
 
 void terminal_ingress(struct osd_context *ctx, void* mod_arg,
-                      uint16_t *packet, size_t len);
+                      uint16_t *packet);
 
 #endif

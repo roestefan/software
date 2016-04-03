@@ -25,20 +25,19 @@ int osd_connect(struct osd_context *ctx) {
 }
 
 OSD_EXPORT
-int osd_send_packet(struct osd_context *ctx, uint16_t *data,
-                    size_t size) {
-    return ctx->functions.send(ctx, data, size);
+int osd_send_packet(struct osd_context *ctx, uint16_t *packet) {
+    return ctx->functions.send(ctx, packet);
 }
 
-void osd_handle_packet(struct osd_context *ctx, uint16_t *packet,
-                       size_t size) {
-    uint8_t type = (packet[1] >> 10);
+void osd_handle_packet(struct osd_context *ctx, uint16_t *packet) {
+    uint8_t type = (packet[2] >> 10);
+    uint16_t size = packet[0];
 
     if ((type >> 4) == 0) {
         // Register access
         pthread_mutex_lock(&ctx->reg_access.lock);
 
-        memcpy(&ctx->reg_access.resp_packet, packet, size*2);
+        memcpy(&ctx->reg_access.resp_packet, packet, (size+1)*2);
 
         ctx->reg_access.size = size;
 
@@ -46,7 +45,7 @@ void osd_handle_packet(struct osd_context *ctx, uint16_t *packet,
 
         pthread_mutex_unlock(&ctx->reg_access.lock);
     } else {
-        uint16_t mod_id = packet[1] & 0x3ff;
+        uint16_t mod_id = packet[2] & 0x3ff;
         size_t ev_size = (type & 0xf);
 
         if (size != ev_size + 2) {
@@ -60,7 +59,7 @@ void osd_handle_packet(struct osd_context *ctx, uint16_t *packet,
                 fprintf(stderr, "No module handler\n");
                 return;
             }
-            ctx->module_handlers[mod_id]->packet_handler.call(ctx, parg, packet, size);
+            ctx->module_handlers[mod_id]->packet_handler.call(ctx, parg, packet);
         } else if ((type >> 4) == OSD_EVENT_TRACE) {
         }
     }

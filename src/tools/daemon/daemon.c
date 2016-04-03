@@ -114,18 +114,17 @@ int main(int argc, char* argv[]) {
         INFO("Connected");
 
         while (1) {
-            uint16_t *data = malloc(64);
-            uint16_t *packet = &data[1];
+            uint16_t *packet = malloc(64);
 
-            int rv = recv(clientsocket, data, 2, 0);
+            int rv = recv(clientsocket, packet, 2, 0);
             if (rv == 0) {
                 break;
             }
             assert(rv == 2);
 
-            size_t size = data[0];
+            size_t size = packet[0];
 
-            rv = recv(clientsocket, packet, size*2, 0);
+            rv = recv(clientsocket, &packet[1], size*2, 0);
             if (rv == 0) {
                 break;
             }
@@ -135,12 +134,11 @@ int main(int argc, char* argv[]) {
                 size_t rsize;
                 // This is a register access. We cannot plainly access
                 // the interface, but need to call the actual functions
-                osd_reg_access(ctx, packet, size, &rsize);
-                data[0] = rsize;
+                osd_reg_access(ctx, packet);
 
-                rv = send(clientsocket, data, (rsize+1)*2, 0);
-            } else if ((packet[1] & 0xc000) == 0x4000) {
-                osd_send_packet(ctx, packet, size);
+                rv = send(clientsocket, packet, (packet[0]+1)*2, 0);
+            } else if ((packet[2] & 0xc000) == 0x4000) {
+                osd_send_packet(ctx, packet);
             } else {
                 WARN("Dropped invalid egress packet\n");
             }

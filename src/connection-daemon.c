@@ -12,12 +12,9 @@
 
 static void* receiver_thread_function(void* arg);
 
-int osd_send_packet_daemon(struct osd_context *ctx, uint16_t *packet,
-                               size_t size) {
-    uint16_t *data = packet - 1;
-    data[0] = size;
+int osd_send_packet_daemon(struct osd_context *ctx, uint16_t *packet) {
 
-    send(ctx->ctx.daemon->socket, data, (size+1)*2, 0);
+    send(ctx->ctx.daemon->socket, packet, (packet[0]+1)*2, 0);
 
     return OSD_SUCCESS;
 }
@@ -66,14 +63,14 @@ static void* receiver_thread_function(void* arg) {
     int rv;
 
     while (1) {
-        rv = recv(dctx->socket, packet, 2, 0);
+        rv = recv(dctx->socket, packet, 2, MSG_WAITALL);
         assert(rv == 2);
 
         size = *((uint16_t*) &packet[0]);
 
-        rv = recv(dctx->socket, packet, size*2, 0);
+        rv = recv(dctx->socket, &packet[1], size*2, MSG_WAITALL);
         assert(rv == (int) size*2);
 
-        osd_handle_packet(ctx, packet, size);
+        osd_handle_packet(ctx, packet);
     }
 }

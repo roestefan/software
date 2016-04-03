@@ -44,7 +44,7 @@ struct osd_context_daemon {
 
 struct osd_mode_functions {
     int (*connect)(struct osd_context *);
-    int (*send)(struct osd_context *, uint16_t *, size_t);
+    int (*send)(struct osd_context *, uint16_t *);
     int (*claim)(struct osd_context *ctx, uint16_t);
 };
 
@@ -71,12 +71,10 @@ struct osd_context {
 int osd_connect_standalone(struct osd_context *ctx);
 int osd_connect_daemon(struct osd_context *ctx);
 
-int osd_send_packet_standalone(struct osd_context *ctx, uint16_t *data,
-                               size_t size);
-int osd_send_packet_daemon(struct osd_context *ctx, uint16_t *data,
-                               size_t size);
+int osd_send_packet_standalone(struct osd_context *ctx, uint16_t *data);
+int osd_send_packet_daemon(struct osd_context *ctx, uint16_t *data);
 
-void osd_handle_packet(struct osd_context *ctx, uint16_t *packet, size_t size);
+void osd_handle_packet(struct osd_context *ctx, uint16_t *packet);
 
 int osd_system_enumerate(struct osd_context *ctx);
 
