@@ -8,6 +8,9 @@ int osd_connect(struct osd_context *ctx) {
     pthread_mutex_init(&ctx->reg_access.lock, 0);
     pthread_cond_init(&ctx->reg_access.cond_complete, 0);
 
+    pthread_mutex_init(&ctx->mem_access.lock, 0);
+    pthread_cond_init(&ctx->mem_access.cond_complete, 0);
+
     int rv = ctx->functions.connect(ctx);
 
     if (rv != 0) {

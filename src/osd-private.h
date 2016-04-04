@@ -63,6 +63,14 @@ struct osd_context {
         uint16_t resp_packet[10];
     } reg_access;
 
+    struct {
+        pthread_mutex_t lock;
+        pthread_cond_t cond_complete;
+        size_t size;
+        size_t count;
+        uint8_t *data;
+    } mem_access;
+
     struct osd_system_info *system_info;
 
     struct module_handler **module_handlers;
