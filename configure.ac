@@ -42,6 +42,15 @@ AC_SUBST(READLINE_LIBS)
 
 AC_CHECK_HEADER([readline/readline.h],,AC_MSG_ERROR([Unable to find readline.h. You may need to install the readline development package.]))
 
+# check for libelf
+AC_CHECK_LIB([elf], [elf_version], [
+    LIBELF_LIBS=-lelf
+    AC_DEFINE([HAVE_LIBELF], [1], [Define to 1 if you have the `elfutils' library (-lelf).])
+])
+AC_SUBST(LIBELF_LIBS)
+
+AC_CHECK_HEADER([elfutils/version.h],,AC_MSG_ERROR([Unable to find elfutils/version.h. You may need to install the elfutils development package.]))
+
 AC_ARG_ENABLE([python-interface],
     AS_HELP_STRING([--enable-python-interface], [enable python interface (default n)]),
     [use_python=$enableval],

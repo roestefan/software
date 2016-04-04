@@ -1,6 +1,7 @@
 #include "osd-private.h"
 #include <libglip.h>
 
+#include <gelf.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -135,4 +136,95 @@ int osd_memory_write(struct osd_context *ctx, uint16_t mod, uint64_t addr,
 
     // TODO: epilog
     return 0;
+}
+
+OSD_EXPORT
+int osd_memory_read(struct osd_context *ctx, uint16_t mod, uint64_t addr,
+                     uint8_t* data, size_t size) {
+
+    // TODO: prolog
+
+    // bulk part
+    memory_read_bulk(ctx, mod, addr, data, size);
+
+    // TODO: epilog
+    return 0;
+}
+
+OSD_EXPORT
+int osd_memory_loadelf(struct osd_context *ctx, uint16_t mod, char *filename) {
+    int fd;
+    Elf *elf_object;
+    size_t num;
+    int rv;
+
+    printf("Open %s\n", filename);
+
+    fd = open(filename, O_RDONLY , 0);
+    if (fd < 0) {
+        return -1;
+    }
+
+    if (elf_version(EV_CURRENT) == EV_NONE) {
+        rv = -1;
+        goto error_file;
+    }
+
+    printf("Get elf object\n");
+
+    elf_object = elf_begin(fd , ELF_C_READ , NULL);
+    if (elf_object == NULL) {
+        printf("%s\n", elf_errmsg(-1));
+        rv = -1;
+        goto error_file;
+    }
+
+    printf("Get phdrnum\n");
+
+    // Load program headers
+    if (elf_getphdrnum(elf_object, &num)) {
+        rv = -1;
+        goto error_elf;
+    }
+
+    printf("phdrnum = %zu\n", num);
+
+    for (size_t i = 0; i < num; i++) {
+        printf("Load program header %zu\n", i);
+        GElf_Phdr phdr;
+        Elf_Data *data;
+        if (gelf_getphdr(elf_object, i, &phdr) != &phdr) {
+            rv = -1;
+            goto error_elf;
+        }
+
+        data = elf_getdata_rawchunk(elf_object, phdr.p_offset, phdr.p_filesz, ELF_T_BYTE);
+        if (data) {
+            printf("Load elf program header to %lx, size %zu\n", phdr.p_paddr, data->d_size);
+            osd_memory_write(ctx, mod, phdr.p_paddr, data->d_buf, data->d_size);
+        }
+    }
+
+    for (size_t i = 0; i < num; i++) {
+        printf("Verify program header %zu\n", i);
+        GElf_Phdr phdr;
+        Elf_Data *data;
+        if (gelf_getphdr(elf_object, i, &phdr) != &phdr) {
+            rv = -1;
+            goto error_elf;
+        }
+
+        data = elf_getdata_rawchunk(elf_object, phdr.p_offset, phdr.p_filesz, ELF_T_BYTE);
+
+        uint8_t *memory_data = malloc(data->d_size);
+        osd_memory_read(ctx, mod, phdr.p_paddr, memory_data, data->d_size);
+    }
+
+    return 0;
+
+    error_elf:
+    elf_end(elf_object);
+    error_file:
+    close(fd);
+    return rv;
 }

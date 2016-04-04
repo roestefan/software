@@ -45,6 +45,11 @@ int main(int argc, char* argv[]) {
 
             if (!strcmp(subcmd, "test")) {
                 memory_tests(ctx);
+            } else if (!strcmp(subcmd, "loadelf")) {
+                char *file = strtok(NULL, " ");
+                char *mem = strtok(NULL, " ");
+
+                osd_memory_loadelf(ctx, atoi(mem), file);
             }
         }
     }

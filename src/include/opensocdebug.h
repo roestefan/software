@@ -133,6 +133,7 @@ int osd_module_register_handler(struct osd_context *ctx, uint16_t id,
 
 int osd_memory_write(struct osd_context *ctx, uint16_t mod, uint64_t addr, uint8_t* data, size_t size);
 int osd_memory_read(struct osd_context *ctx, uint16_t mod, uint64_t addr, uint8_t* data, size_t size);
+int osd_memory_loadelf(struct osd_context *ctx, uint16_t mod, char *filename);
 
 #ifdef __cplusplus
 } /* extern "C" */
