@@ -1,6 +1,10 @@
 #include "osd-private.h"
 
 #include <assert.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+
+#include "tools/daemon/daemon-packets.h"
 
 void control_init(struct osd_context *ctx) {
     size_t sz = sizeof(struct module_handler*);
@@ -22,6 +26,14 @@ int claim_standalone(struct osd_context *ctx, uint16_t id) {
 }
 
 int claim_daemon(struct osd_context *ctx, uint16_t id) {
+    uint16_t packet[4];
+    packet[0] = 3;
+    packet[1] = 0xffff;
+    packet[2] = OSD_DP_CLAIM;
+    packet[3] = id;
+
+    send(ctx->ctx.daemon->socket, packet, 8, 0);
+
     return 0;
 }
 

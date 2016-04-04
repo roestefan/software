@@ -130,8 +130,20 @@ int main(int argc, char* argv[]) {
             }
             assert(rv == (int) size*2);
 
-            if ((packet[1] & 0xc000) == 0) {
-                size_t rsize;
+            if (packet[1] == 0xffff) {
+                // This is a daemon packet
+                switch (packet[2]) {
+                    case OSD_DP_CLAIM:
+                        osd_module_claim(ctx, packet[3]);
+                        osd_module_register_handler(ctx, packet[3], OSD_EVENT_PACKET,
+                                                    (void*) (intptr_t) clientsocket, handle_ingress);
+                        osd_module_register_handler(ctx, packet[3], OSD_EVENT_TRACE,
+                                                    (void*) (intptr_t) clientsocket, handle_ingress);
+                        break;
+                    default:
+                        break;
+                }
+            } else if ((packet[2] & 0xc000) == 0) {
                 // This is a register access. We cannot plainly access
                 // the interface, but need to call the actual functions
                 osd_reg_access(ctx, packet);
