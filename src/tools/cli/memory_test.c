@@ -4,11 +4,14 @@
 
 static int memory_test(struct osd_context *ctx, uint16_t mod) {
     uint64_t addr;
-    uint8_t *data;
+    uint8_t *wdata, *rdata;
     size_t size;
     size_t blocksize;
 
     struct osd_memory_descriptor *desc;
+
+    wdata = malloc(1024*1024);
+    rdata = malloc(1024*1024);
 
     osd_get_memory_descriptor(ctx, mod, &desc);
     assert(desc);
@@ -19,19 +22,32 @@ static int memory_test(struct osd_context *ctx, uint16_t mod) {
     // Perform one aligned write of one word
     addr = desc->base_addr;
     size = blocksize;
-    data = malloc(size);
-    for (size_t i = 0; i < size; i++) data[i] = i & 0xff;
+    for (size_t i = 0; i < size; i++) wdata[i] = i & 0xff;
 
-    osd_memory_write(ctx, mod, addr, data, size);
+    osd_memory_write(ctx, mod, addr, wdata, size);
 
     // Write the next ten blocks
     addr = desc->base_addr + blocksize;
     size = blocksize * 10;
-    data = realloc(data, size);
-    for (size_t i = 0; i < size; i++) data[i] = i & 0xff;
+    for (size_t i = 0; i < size; i++) wdata[i] = i & 0xff;
 
-    osd_memory_write(ctx, mod, addr, data, size);
+    osd_memory_write(ctx, mod, addr, wdata, size);
 
+    // Read back the first block
+    addr = desc->base_addr;
+    size = blocksize;
+
+    osd_memory_read(ctx, mod, addr, rdata, size);
+
+    for (size_t i = 0; i < size; i++) printf("  %02x %02x\n", wdata[i], rdata[i]);
+
+    // Read back the next ten blocks
+    addr = desc->base_addr + blocksize;
+    size = blocksize * 10;
+
+    osd_memory_read(ctx, mod, addr, rdata, size);
+
+    for (size_t i = 0; i < size; i++) printf("  %02x %02x\n", wdata[i], rdata[i]);
 
     return 0;
 }
