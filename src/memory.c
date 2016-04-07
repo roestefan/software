@@ -9,6 +9,11 @@
 static int memory_write_bulk(struct osd_context *ctx, uint16_t mod,
                              uint64_t addr,
                              uint8_t* data, size_t size) {
+
+    if (size > 16383) {
+        return -1;
+    }
+
     uint16_t psize = osd_get_max_pkt_len(ctx);
     uint16_t wordsperpacket = psize - 2;
     size_t numwords = size/2;
@@ -56,6 +61,12 @@ static int memory_write_bulk(struct osd_context *ctx, uint16_t mod,
         osd_send_packet(ctx, packet);
     }
 
+    return 0;
+}
+
+static int memory_write_single(struct osd_context *ctx, uint16_t mod,
+                             uint64_t addr,
+                             uint8_t* data, size_t size) {
     return 0;
 }
 
@@ -128,26 +139,72 @@ static int memory_read_bulk(struct osd_context *ctx, uint16_t mod,
 OSD_EXPORT
 int osd_memory_write(struct osd_context *ctx, uint16_t mod, uint64_t addr,
                      uint8_t* data, size_t size) {
+    struct osd_memory_descriptor *mem;
+    mem = ctx->system_info->modules[mod].descriptor.memory;
 
-    // TODO: prolog
+    size_t blocksize = mem->data_width >> 3;
 
-    // bulk part
-    memory_write_bulk(ctx, mod, addr, data, size);
+    int prolog = (blocksize - addr) % blocksize;
+    int epilog = ((addr + size) % blocksize);
+    int bulk = size - prolog - epilog;
 
-    // TODO: epilog
+    printf("write, prolog: %d, bulk: %d, epilog: %d\n", prolog, bulk, epilog);
+
+    if (prolog) {
+        memory_write_single(ctx, mod, addr, data, prolog);
+    }
+
+    if (bulk) {
+        for (size_t i = 0; i < size; i += 16383) {
+            size_t s = 16383;
+
+            if ((i+s) > size) s = size - i - 1;
+
+            printf("bulk part size %d\n", s);
+
+            memory_write_bulk(ctx, mod, addr, data, s);
+        }
+    }
+
+    if (epilog) {
+        memory_write_single(ctx, mod, addr+prolog+bulk, &data[prolog+bulk], epilog);
+    }
+
     return 0;
 }
 
 OSD_EXPORT
 int osd_memory_read(struct osd_context *ctx, uint16_t mod, uint64_t addr,
                      uint8_t* data, size_t size) {
+    struct osd_memory_descriptor *mem;
+    mem = ctx->system_info->modules[mod].descriptor.memory;
 
-    // TODO: prolog
+    size_t blocksize = mem->data_width >> 3;
 
-    // bulk part
-    memory_read_bulk(ctx, mod, addr, data, size);
+    int prolog = (blocksize - addr) % blocksize;
+    int epilog = ((addr + size) % blocksize);
+    int bulk = size - prolog - epilog;
 
-    // TODO: epilog
+    printf("read, prolog: %d, bulk: %d, epilog: %d\n", prolog, bulk, epilog);
+
+    if (prolog) {
+        uint8_t *tmp = malloc(blocksize);
+        memory_read_bulk(ctx, mod, addr - blocksize + prolog, tmp, blocksize);
+        memcpy(data, &tmp[prolog], prolog);
+        free(tmp);
+    }
+
+    if (bulk) {
+        memory_read_bulk(ctx, mod, addr, &data[prolog], bulk);
+    }
+
+    if (epilog) {
+        uint8_t *tmp = malloc(blocksize);
+        memory_read_bulk(ctx, mod, addr + prolog + bulk, tmp, blocksize);
+        memcpy(data, &tmp[prolog+bulk], epilog);
+        free(tmp);
+    }
+
     return 0;
 }
 
@@ -205,6 +262,7 @@ int osd_memory_loadelf(struct osd_context *ctx, uint16_t mod, char *filename) {
         }
     }
 
+    return 0;
     for (size_t i = 0; i < num; i++) {
         printf("Verify program header %zu\n", i);
         GElf_Phdr phdr;
