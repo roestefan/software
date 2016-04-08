@@ -67,8 +67,56 @@ static int memory_write_bulk(struct osd_context *ctx, uint16_t mod,
 }
 
 static int memory_write_single(struct osd_context *ctx, uint16_t mod,
-                             uint64_t addr,
-                             uint8_t* data, size_t size) {
+                               uint64_t addr, uint8_t* data, size_t size) {
+
+    uint16_t psize = osd_get_max_pkt_len(ctx);
+
+    uint16_t *packet = malloc((psize+1)*2);
+
+    struct osd_memory_descriptor *mem;
+    mem = ctx->system_info->modules[mod].descriptor.memory;
+
+    size_t hlen = 1; // control word
+    hlen += ((mem->addr_width + 15) >> 4);
+    uint16_t *header = &packet[3];
+
+    uint8_t strobe = 0;
+    size_t blocksize = mem->data_width >> 3;
+    uint8_t baddr = addr % blocksize;
+
+    for (size_t i = 0; i < blocksize; i++) {
+        if ((i >= baddr) && (i < baddr + size)) {
+            strobe |= 1 << i;
+        }
+    }
+
+    printf("strobe: %04x\n", strobe);
+
+    header[0] = 0x8000 | strobe;
+    header[1] = addr & 0xffff;
+    if (mem->addr_width > 16)
+        header[2] = (addr >> 16) & 0xffff;
+    if (mem->addr_width > 32)
+        header[3] = (addr >> 32) & 0xffff;
+    if (mem->addr_width > 48)
+        header[4] = (addr >> 48) & 0xffff;
+
+    // Static for packets
+    packet[0] = hlen + 2 + blocksize/2;
+    packet[1] = mod;
+    packet[2] = 1 << 14;
+
+    int curword = 0;
+
+    uint8_t *block = calloc(1, blocksize);
+    memcpy(&block[baddr], data, size);
+
+    for (size_t i = 0; i < blocksize/2; i++) {
+        packet[i+3+hlen] = (block[i*2+1] << 8) | block[i*2];
+    }
+
+    osd_send_packet(ctx, packet);
+
     return 0;
 }
 
