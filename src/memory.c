@@ -126,8 +126,8 @@ static void memory_read_cb(struct osd_context *ctx, void* arg,
 
     for (size_t i = 0; i < num; i++) {
         size_t idx = ctx->mem_access.count + i*2;
-        ctx->mem_access.data[idx] = packet[3+i] >> 8;
-        ctx->mem_access.data[idx+1] = packet[3+i] & 0xff;
+        ctx->mem_access.data[idx] = packet[3+i] & 0xff;
+        ctx->mem_access.data[idx+1] = packet[3+i] >> 8;
     }
 
     ctx->mem_access.count += num;
