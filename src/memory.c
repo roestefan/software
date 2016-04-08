@@ -46,7 +46,7 @@ static int memory_write_bulk(struct osd_context *ctx, uint16_t mod,
     int curword = 0;
 
     for (size_t i = 0; i < numwords; i++) {
-        packet[3+curword] = (data[i*2] << 8) | data[i*2+1];
+        packet[3+curword] = (data[i*2+1] << 8) | data[i*2];
         curword++;
 
         if (curword == wordsperpacket) {
