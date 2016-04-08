@@ -10,7 +10,7 @@ static int memory_write_bulk(struct osd_context *ctx, uint16_t mod,
                              uint64_t addr,
                              uint8_t* data, size_t size) {
 
-    if (size > 16383) {
+    if (size > 0x3ffe) {
         return -1;
     }
 
@@ -205,14 +205,14 @@ int osd_memory_write(struct osd_context *ctx, uint16_t mod, uint64_t addr,
     }
 
     if (bulk) {
-        for (size_t i = 0; i < size; i += 16383) {
-            size_t s = 16383;
+        for (size_t i = 0; i < size; i += 0x3ffe) {
+            size_t s = 0x3ffe;
 
             if ((i+s) > size) s = size - i;
 
             printf("bulk part size %d\n", s);
 
-            memory_write_bulk(ctx, mod, addr, &data[prolog+i], s);
+            memory_write_bulk(ctx, mod, addr+prolog+i, &data[prolog+i], s);
         }
     }
 
