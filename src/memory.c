@@ -61,6 +61,8 @@ static int memory_write_bulk(struct osd_context *ctx, uint16_t mod,
         osd_send_packet(ctx, packet);
     }
 
+    free(packet);
+
     return 0;
 }
 
