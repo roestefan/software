@@ -208,11 +208,11 @@ int osd_memory_write(struct osd_context *ctx, uint16_t mod, uint64_t addr,
         for (size_t i = 0; i < size; i += 16383) {
             size_t s = 16383;
 
-            if ((i+s) > size) s = size - i - 1;
+            if ((i+s) > size) s = size - i;
 
             printf("bulk part size %d\n", s);
 
-            memory_write_bulk(ctx, mod, addr, data, s);
+            memory_write_bulk(ctx, mod, addr, &data[prolog+i], s);
         }
     }
 
