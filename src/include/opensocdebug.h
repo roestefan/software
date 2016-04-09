@@ -61,14 +61,6 @@ int osd_new(struct osd_context **ctx, enum osd_mode standalone,
 
 int osd_connect(struct osd_context *ctx);
 
-/*struct osd_dp {
-    size_t payload_size;
-    uint8_t type;
-    uint16_t dest;
-    uint16_t src;
-    uint16_t payload[];
-};*/
-
 enum osd_module_types {
     OSD_MOD_HOST = 0,
     OSD_MOD_SCM = 1,
@@ -112,7 +104,7 @@ int osd_module_is_terminal(struct osd_context *ctx, uint16_t addr);
 
 int osd_get_scm(struct osd_context *ctx, uint16_t *addr);
 int osd_get_memories(struct osd_context *ctx,
-                            uint16_t **memories, size_t *num);
+                     uint16_t **memories, size_t *num);
 
 int osd_get_memory_descriptor(struct osd_context *, uint16_t addr,
                               struct osd_memory_descriptor **desc);

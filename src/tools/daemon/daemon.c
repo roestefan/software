@@ -36,7 +36,6 @@ int main(int argc, char* argv[]) {
 
     osd_new(&ctx, OSD_MODE_STANDALONE, argc-1, options);
 
-
     osd_connect(ctx);
 
     uint16_t systemid, num_modules;

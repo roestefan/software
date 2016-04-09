@@ -6,7 +6,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-static const int BULK_MAX = 0x3f00;
+static const size_t BULK_MAX = 0x3f00;
 
 static int memory_write_bulk(struct osd_context *ctx, uint16_t mod,
                              uint64_t addr,
@@ -92,8 +92,6 @@ static int memory_write_single(struct osd_context *ctx, uint16_t mod,
         }
     }
 
-    printf("strobe: %04x\n", strobe);
-
     addr = addr - (addr % blocksize);
 
     header[0] = 0x8000 | strobe;
@@ -109,8 +107,6 @@ static int memory_write_single(struct osd_context *ctx, uint16_t mod,
     packet[0] = hlen + 2 + blocksize/2;
     packet[1] = mod;
     packet[2] = 1 << 14;
-
-    int curword = 0;
 
     uint8_t *block = calloc(1, blocksize);
     memcpy(&block[baddr], data, size);
@@ -223,8 +219,6 @@ int osd_memory_write(struct osd_context *ctx, uint16_t mod, uint64_t addr,
             size_t s = BULK_MAX;
 
             if ((i+s) > size) s = bulk - i;
-
-            printf("bulk part size %d\n", s);
 
             memory_write_bulk(ctx, mod, addr+prolog+i, &data[prolog+i], s);
         }
