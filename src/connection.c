@@ -32,6 +32,13 @@ int osd_send_packet(struct osd_context *ctx, uint16_t *packet) {
     return ctx->functions.send(ctx, packet);
 }
 
+OSD_EXPORT
+void osd_print_packet(uint16_t *packet) {
+    for (uint16_t i = 0; i < packet[0]+1; i++) {
+        printf("  %04x\n", packet[i]);
+    }
+}
+
 void osd_handle_packet(struct osd_context *ctx, uint16_t *packet) {
     uint8_t type = (packet[2] >> 10);
     uint16_t size = packet[0];

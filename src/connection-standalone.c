@@ -9,6 +9,7 @@ static void* receiver_thread_function(void* arg);
 int osd_send_packet_standalone(struct osd_context *ctx, uint16_t *packet) {
     struct glip_ctx *gctx = ctx->ctx.standalone->glip_ctx;
 
+    OSD_PRINT_PACKET_LOCATION(ctx, packet);
     size_t actual;
     glip_write_b(gctx, 0, (packet[0]+1)*2, (void*) packet, &actual, 0);
 
@@ -43,6 +44,8 @@ static void* receiver_thread_function(void* arg) {
 
         rv = glip_read_b(gctx, 0, size*2, (void*) &packet[1], &actual, 0);
         assert(rv == 0);
+
+        OSD_PRINT_PACKET_LOCATION(ctx, packet);
 
         osd_handle_packet(ctx, packet);
     }

@@ -74,6 +74,8 @@ struct osd_context {
     struct osd_system_info *system_info;
 
     struct module_handler **module_handlers;
+
+    uint8_t debug_packets;
 };
 
 int osd_connect_standalone(struct osd_context *ctx);

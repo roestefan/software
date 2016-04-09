@@ -13,6 +13,7 @@
 static void* receiver_thread_function(void* arg);
 
 int osd_send_packet_daemon(struct osd_context *ctx, uint16_t *packet) {
+    OSD_PRINT_PACKET_LOCATION(ctx, packet);
 
     send(ctx->ctx.daemon->socket, packet, (packet[0]+1)*2, 0);
 
@@ -70,6 +71,8 @@ static void* receiver_thread_function(void* arg) {
 
         rv = recv(dctx->socket, &packet[1], size*2, MSG_WAITALL);
         assert(rv == (int) size*2);
+
+        OSD_PRINT_PACKET_LOCATION(ctx, packet);
 
         osd_handle_packet(ctx, packet);
     }

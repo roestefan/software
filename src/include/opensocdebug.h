@@ -79,6 +79,13 @@ static const int OSD_SUCCESS = 0;
 static const int OSD_E_GENERIC = 1;
 static const int OSD_E_CANNOTENUMERATE = 2;
 
+void osd_print_packet(uint16_t *packet);
+
+#define OSD_PRINT_PACKET_LOCATION(ctx, packet)      \
+        if (ctx->debug_packets) {                   \
+            printf("%s:%d:\n", __FILE__, __LINE__); \
+            osd_print_packet(packet);               \
+        }
 
 int osd_reset_system(struct osd_context *ctx, int halt_cores);
 int osd_start_cores(struct osd_context *ctx);
