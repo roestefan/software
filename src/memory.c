@@ -6,11 +6,13 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+static const int BULK_MAX = 0x3f00;
+
 static int memory_write_bulk(struct osd_context *ctx, uint16_t mod,
                              uint64_t addr,
                              uint8_t* data, size_t size) {
 
-    if (size > 0x3ffe) {
+    if (size > BULK_MAX) {
         return -1;
     }
 
@@ -205,8 +207,8 @@ int osd_memory_write(struct osd_context *ctx, uint16_t mod, uint64_t addr,
     }
 
     if (bulk) {
-        for (size_t i = 0; i < size; i += 0x3ffe) {
-            size_t s = 0x3ffe;
+        for (size_t i = 0; i < size; i += BULK_MAX) {
+            size_t s = BULK_MAX;
 
             if ((i+s) > size) s = size - i;
 
