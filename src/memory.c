@@ -94,6 +94,8 @@ static int memory_write_single(struct osd_context *ctx, uint16_t mod,
 
     printf("strobe: %04x\n", strobe);
 
+    addr = addr - (addr % blocksize);
+
     header[0] = 0x8000 | strobe;
     header[1] = addr & 0xffff;
     if (mem->addr_width > 16)
