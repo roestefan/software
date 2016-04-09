@@ -69,10 +69,13 @@ enum osd_module_types {
 };
 
 struct osd_memory_descriptor {
-    uint64_t base_addr;
-    uint64_t size;
     uint16_t data_width;
     uint16_t addr_width;
+    uint8_t num_regions;
+    struct {
+        uint64_t base_addr;
+        uint64_t size;
+    } regions[];
 };
 
 static const int OSD_SUCCESS = 0;

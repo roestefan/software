@@ -319,6 +319,7 @@ int osd_memory_loadelf(struct osd_context *ctx, uint16_t mod, char *filename) {
         data = elf_getdata_rawchunk(elf_object, phdr.p_offset, phdr.p_filesz, ELF_T_BYTE);
         if (data) {
             printf("Load elf program header to %lx, size %zu\n", phdr.p_paddr, data->d_size);
+
             osd_memory_write(ctx, mod, phdr.p_paddr, data->d_buf, data->d_size);
         }
     }

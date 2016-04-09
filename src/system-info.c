@@ -1,5 +1,6 @@
 #include "osd-private.h"
 #include <libglip.h>
+#include <assert.h>
 
 const struct module_types module_lookup[4] = {
         { .name = "HOST" },
@@ -42,30 +43,37 @@ int osd_system_enumerate(struct osd_context *ctx) {
             ctx->system_info->num_memories++;
 
             struct osd_memory_descriptor *mem;
-            mem = calloc(1, sizeof(struct osd_memory_descriptor));
+
+            uint16_t tmp;
+            osd_reg_read16(ctx, i, 0x202, &tmp);
+            assert (tmp <= 8);
+
+            mem = calloc(1, sizeof(struct osd_memory_descriptor) + tmp*sizeof(uint64_t)*2);
             mod->descriptor.memory = mem;
+            mem->num_regions = tmp;
 
             osd_reg_read16(ctx, i, 0x200, &mem->data_width);
             osd_reg_read16(ctx, i, 0x201, &mem->addr_width);
 
-            uint16_t r;
-            osd_reg_read16(ctx, i, 0x202, &r);
-            mem->base_addr = r;
-            osd_reg_read16(ctx, i, 0x203, &r);
-            mem->base_addr |= ((uint64_t) r << 16);
-            osd_reg_read16(ctx, i, 0x204, &r);
-            mem->base_addr |= ((uint64_t) r << 32);
-            osd_reg_read16(ctx, i, 0x205, &r);
-            mem->base_addr |= ((uint64_t) r << 48);
-
-            osd_reg_read16(ctx, i, 0x206, &r);
-            mem->size = r;
-            osd_reg_read16(ctx, i, 0x207, &r);
-            mem->size |= ((uint64_t) r << 16);
-            osd_reg_read16(ctx, i, 0x208, &r);
-            mem->size |= ((uint64_t) r << 32);
-            osd_reg_read16(ctx, i, 0x209, &r);
-            mem->size |= ((uint64_t) r << 48);
+            for (size_t j = 0; j < mem->num_regions; j++) {
+                uint16_t regbase = 0x280 + 16*j;
+                osd_reg_read16(ctx, i, regbase, &tmp);
+                mem->regions[j].base_addr = tmp;
+                osd_reg_read16(ctx, i, regbase+1, &tmp);
+                mem->regions[j].base_addr |= ((uint64_t) tmp << 16);
+                osd_reg_read16(ctx, i, regbase+2, &tmp);
+                mem->regions[j].base_addr |= ((uint64_t) tmp << 32);
+                osd_reg_read16(ctx, i, regbase+3, &tmp);
+                mem->regions[j].base_addr |= ((uint64_t) tmp << 48);
+                osd_reg_read16(ctx, i, regbase+4, &tmp);
+                mem->regions[j].size = tmp;
+                osd_reg_read16(ctx, i, regbase+5, &tmp);
+                mem->regions[j].size |= ((uint64_t) tmp << 16);
+                osd_reg_read16(ctx, i, regbase+6, &tmp);
+                mem->regions[j].size |= ((uint64_t) tmp << 32);
+                osd_reg_read16(ctx, i, regbase+7, &tmp);
+                mem->regions[j].size |= ((uint64_t) tmp << 48);
+            }
         }
 
         osd_reg_read16(ctx, i, 1, &mod->version);
@@ -168,9 +176,12 @@ int osd_print_module_info(struct osd_context *ctx, uint16_t addr,
             fprintf(fh, "%sdata width: %d, ", indentstring,
                     mem->data_width);
             fprintf(fh, "address width: %d\n", mem->addr_width);
-            fprintf(fh, "%sbase address: 0x%016lx, ", indentstring,
-                    mem->base_addr);
-            fprintf(fh, "memory size: %ld Bytes\n", mem->size);
+            fprintf(fh, "%snumber of regions: %d\n", indentstring, mem->num_regions);
+            for (int r = 0; r < mem->num_regions; r++) {
+                fprintf(fh, "%s  [%d] base address: 0x%016lx, ", indentstring,
+                        r, mem->regions[r].base_addr);
+                fprintf(fh, "memory size: %ld Bytes\n", mem->regions[r].size);
+            }
             break;
         default:
             break;

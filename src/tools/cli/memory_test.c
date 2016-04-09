@@ -2,7 +2,8 @@
 
 #include <assert.h>
 
-static int memory_test(struct osd_context *ctx, uint16_t mod) {
+static int memory_test(struct osd_context *ctx, uint16_t mod,
+                       uint8_t region) {
     uint64_t addr;
     uint8_t *wdata, *rdata;
     size_t size;
@@ -20,21 +21,21 @@ static int memory_test(struct osd_context *ctx, uint16_t mod) {
     blocksize = desc->data_width >> 3;
 
     // Perform one aligned write of one word
-    addr = desc->base_addr;
+    addr = desc->regions[region].base_addr;
     size = blocksize;
     for (size_t i = 0; i < size; i++) wdata[i] = i & 0xff;
 
     osd_memory_write(ctx, mod, addr, wdata, size);
 
     // Write the next ten blocks
-    addr = desc->base_addr + blocksize;
+    addr = desc->regions[region].base_addr + blocksize;
     size = blocksize * 10;
     for (size_t i = 0; i < size; i++) wdata[i] = i & 0xff;
 
     osd_memory_write(ctx, mod, addr, wdata, size);
 
     // Read back the first block
-    addr = desc->base_addr;
+    addr = desc->regions[region].base_addr;
     size = blocksize;
 
     osd_memory_read(ctx, mod, addr, rdata, size);
@@ -49,7 +50,7 @@ static int memory_test(struct osd_context *ctx, uint16_t mod) {
     printf("Test 0 passed\n");
 
     // Read back the next ten blocks
-    addr = desc->base_addr + blocksize;
+    addr = desc->regions[region].base_addr + blocksize;
     size = blocksize * 10;
 
     osd_memory_read(ctx, mod, addr, rdata, size);
@@ -109,7 +110,7 @@ int memory_tests(struct osd_context *ctx) {
 
     for (size_t m = 0; m < num_memories; m++) {
         printf("Test memory %d\n", memories[m]);
-        if (memory_test(ctx, memories[m]) != 0) {
+        if (memory_test(ctx, memories[m], 0) != 0) {
             printf("Failed\n");
             success = 0;
         } else {
