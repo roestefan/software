@@ -190,6 +190,19 @@ static int memory_read_bulk(struct osd_context *ctx, uint16_t mod,
     return 0;
 }
 
+static void calculate_parts(uint64_t addr, size_t size, size_t blocksize,
+                            size_t *prolog, size_t *bulk, size_t *epilog) {
+    if (size < blocksize) {
+        *prolog = size;
+        *epilog = 0;
+        *bulk = 0;
+    } else {
+        *prolog = (blocksize - addr) % blocksize;
+        *epilog = ((addr + size) % blocksize);
+        *bulk = size - *prolog - *epilog;
+    }
+}
+
 OSD_EXPORT
 int osd_memory_write(struct osd_context *ctx, uint16_t mod, uint64_t addr,
                      uint8_t* data, size_t size) {
@@ -198,11 +211,8 @@ int osd_memory_write(struct osd_context *ctx, uint16_t mod, uint64_t addr,
 
     size_t blocksize = mem->data_width >> 3;
 
-    int prolog = (blocksize - addr) % blocksize;
-    int epilog = ((addr + size) % blocksize);
-    int bulk = size - prolog - epilog;
-
-    printf("write, prolog: %d, bulk: %d, epilog: %d\n", prolog, bulk, epilog);
+    size_t prolog, bulk, epilog;
+    calculate_parts(addr, size, blocksize, &prolog, &bulk, &epilog);
 
     if (prolog) {
         memory_write_single(ctx, mod, addr, data, prolog);
@@ -235,11 +245,8 @@ int osd_memory_read(struct osd_context *ctx, uint16_t mod, uint64_t addr,
 
     size_t blocksize = mem->data_width >> 3;
 
-    int prolog = (blocksize - addr) % blocksize;
-    int epilog = ((addr + size) % blocksize);
-    int bulk = size - prolog - epilog;
-
-    printf("read, prolog: %d, bulk: %d, epilog: %d\n", prolog, bulk, epilog);
+    size_t prolog, bulk, epilog;
+    calculate_parts(addr, size, blocksize, &prolog, &bulk, &epilog);
 
     if (prolog) {
         uint8_t *tmp = malloc(blocksize);
