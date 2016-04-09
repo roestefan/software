@@ -210,7 +210,7 @@ int osd_memory_write(struct osd_context *ctx, uint16_t mod, uint64_t addr,
         for (size_t i = 0; i < size; i += BULK_MAX) {
             size_t s = BULK_MAX;
 
-            if ((i+s) > size) s = size - i;
+            if ((i+s) > size) s = bulk - i;
 
             printf("bulk part size %d\n", s);
 
