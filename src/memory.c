@@ -247,7 +247,13 @@ int osd_memory_read(struct osd_context *ctx, uint16_t mod, uint64_t addr,
     }
 
     if (bulk) {
-        memory_read_bulk(ctx, mod, addr, &data[prolog], bulk);
+        for (size_t i = 0; i < size; i += BULK_MAX) {
+            size_t s = BULK_MAX;
+
+            if ((i+s) > size) s = bulk - i;
+
+            memory_read_bulk(ctx, mod, addr + prolog + i, &data[prolog+i], s);
+        }
     }
 
     if (epilog) {
