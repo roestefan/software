@@ -39,7 +39,14 @@ static int memory_test(struct osd_context *ctx, uint16_t mod) {
 
     osd_memory_read(ctx, mod, addr, rdata, size);
 
-    for (size_t i = 0; i < size; i++) printf("  %02x %02x\n", wdata[i], rdata[i]);
+    for (size_t i = 0; i < size; i++) {
+        if (wdata[i] != rdata[i]) {
+            printf("Test 0 failed\n");
+            return -1;
+        }
+    }
+
+    printf("Test 0 passed\n");
 
     // Read back the next ten blocks
     addr = desc->base_addr + blocksize;
@@ -47,7 +54,47 @@ static int memory_test(struct osd_context *ctx, uint16_t mod) {
 
     osd_memory_read(ctx, mod, addr, rdata, size);
 
-    for (size_t i = 0; i < size; i++) printf("  %02x %02x\n", wdata[i], rdata[i]);
+    for (size_t i = 0; i < size; i++) {
+        if (wdata[i] != rdata[i]) {
+            printf("Test 1 failed\n");
+            return -1;
+        }
+    }
+
+    printf("Test 1 passed\n");
+
+    // Test 2: Check writing single bytes
+
+    // First write three blocks
+    size = blocksize * 3;
+
+    for (size_t i = 0; i < size; i++) {
+        wdata[i] = (0x7c - i) % 0xff;
+    }
+
+    addr = 0;
+    osd_memory_write(ctx, mod, addr, wdata, size);
+
+    // Now write each a single byte and check it
+    // Write into the second block
+    addr = blocksize;
+    for (size_t b = 0; b < blocksize; b++) {
+        uint8_t w = 0xd9 - b;
+        osd_memory_write(ctx, mod, addr + b, &w, 1);
+
+        wdata[addr + b] = w;
+
+        osd_memory_read(ctx, mod, 0, rdata, size);
+
+        for (size_t i = 0; i < size; i++) {
+            if (wdata[i] != rdata[i]) {
+                printf("Test 2 failed in iteration %zu\n", b);
+                return -1;
+            }
+        }
+    }
+
+    printf("Test 2 passed\n");
 
     return 0;
 }
@@ -56,14 +103,17 @@ int memory_tests(struct osd_context *ctx) {
     // Get list of memories
     uint16_t *memories;
     size_t num_memories;
-    int success = 0;
+    int success = 1;
 
     osd_get_memories(ctx, &memories, &num_memories);
 
     for (size_t m = 0; m < num_memories; m++) {
         printf("Test memory %d\n", memories[m]);
         if (memory_test(ctx, memories[m]) != 0) {
-            success = 1;
+            printf("Failed\n");
+            success = 0;
+        } else {
+            printf("Passed\n");
         }
     }
 
