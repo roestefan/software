@@ -324,7 +324,6 @@ int osd_memory_loadelf(struct osd_context *ctx, uint16_t mod, char *filename) {
         }
     }
 
-    return 0;
     for (size_t i = 0; i < num; i++) {
         printf("Verify program header %zu\n", i);
         GElf_Phdr phdr;
@@ -335,9 +334,16 @@ int osd_memory_loadelf(struct osd_context *ctx, uint16_t mod, char *filename) {
         }
 
         data = elf_getdata_rawchunk(elf_object, phdr.p_offset, phdr.p_filesz, ELF_T_BYTE);
+        uint8_t *elf_data = data->d_buf;
 
         uint8_t *memory_data = malloc(data->d_size);
         osd_memory_read(ctx, mod, phdr.p_paddr, memory_data, data->d_size);
+
+        for (size_t b = 0; b < data->d_size; b++) {
+            if (memory_data[b] != elf_data[b]) {
+                fprintf(stderr, "Memory mismatch at byte 0x%x. expected: %02x, found: %02x\n", b, memory_data[b], data[b]);
+            }
+        }
     }
 
     return 0;
