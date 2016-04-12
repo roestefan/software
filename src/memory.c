@@ -342,7 +342,7 @@ int osd_memory_loadelf(struct osd_context *ctx, uint16_t mod, char *filename) {
 
         for (size_t b = 0; b < data->d_size; b++) {
             if (memory_data[b] != elf_data[b]) {
-                fprintf(stderr, "Memory mismatch at byte 0x%x. expected: %02x, found: %02x\n", b, elf_data[b], memory_data[b]);
+                fprintf(stderr, "Memory mismatch at byte 0x%zx. expected: %02x, found: %02x\n", b, elf_data[b], memory_data[b]);
                 return -1;
             }
         }
