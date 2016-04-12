@@ -28,6 +28,9 @@ int osd_new(struct osd_context **ctx, enum osd_mode mode,
     struct osd_context *c = calloc(1, sizeof(struct osd_context));
     *ctx = c;
 
+    // Activate for low level debugging
+    //c->debug_packets = 1;
+
     if (mode == OSD_MODE_STANDALONE) {
         return osd_new_standalone(&c->ctx.standalone, &c->functions,
                                   num_mode_options, options);
