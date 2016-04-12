@@ -39,7 +39,7 @@ int osd_new(struct osd_context **ctx, enum osd_mode mode,
                               num_mode_options, options);
     }
 
-    return OSD_SUCCESS;
+    return OSD_E_GENERIC;
 }
 
 static
