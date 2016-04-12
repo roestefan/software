@@ -280,6 +280,7 @@ int osd_memory_loadelf(struct osd_context *ctx, uint16_t mod, char *filename) {
 
     fd = open(filename, O_RDONLY , 0);
     if (fd < 0) {
+        printf("Cannot open file\n");
         return -1;
     }
 
