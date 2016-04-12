@@ -122,15 +122,15 @@ static int memory_write_single(struct osd_context *ctx, uint16_t mod,
 
 static void memory_read_cb(struct osd_context *ctx, void* arg,
                            uint16_t* packet) {
-    size_t num = packet[0] - 2;
+    size_t numwords = packet[0] - 2;
 
-    for (size_t i = 0; i < num; i++) {
-        size_t idx = ctx->mem_access.count + i*2;
+    for (size_t i = 0; i < numwords; i++) {
+        size_t idx = (ctx->mem_access.count + i)*2;
         ctx->mem_access.data[idx] = packet[3+i] & 0xff;
         ctx->mem_access.data[idx+1] = packet[3+i] >> 8;
     }
 
-    ctx->mem_access.count += num;
+    ctx->mem_access.count += numwords;
 
     if (ctx->mem_access.count >= ctx->mem_access.size/2) {
         pthread_mutex_lock(&ctx->mem_access.lock);
@@ -245,7 +245,7 @@ int osd_memory_read(struct osd_context *ctx, uint16_t mod, uint64_t addr,
     if (prolog) {
         uint8_t *tmp = malloc(blocksize);
         memory_read_bulk(ctx, mod, addr - blocksize + prolog, tmp, blocksize);
-        memcpy(data, &tmp[prolog], prolog);
+        memcpy(data, &tmp[blocksize-prolog], prolog);
         free(tmp);
     }
 
@@ -262,7 +262,7 @@ int osd_memory_read(struct osd_context *ctx, uint16_t mod, uint64_t addr,
     if (epilog) {
         uint8_t *tmp = malloc(blocksize);
         memory_read_bulk(ctx, mod, addr + prolog + bulk, tmp, blocksize);
-        memcpy(data, &tmp[prolog+bulk], epilog);
+        memcpy(&data[prolog+bulk], tmp, epilog);
         free(tmp);
     }
 
@@ -341,9 +341,12 @@ int osd_memory_loadelf(struct osd_context *ctx, uint16_t mod, char *filename) {
 
         for (size_t b = 0; b < data->d_size; b++) {
             if (memory_data[b] != elf_data[b]) {
-                fprintf(stderr, "Memory mismatch at byte 0x%x. expected: %02x, found: %02x\n", b, memory_data[b], data[b]);
+                fprintf(stderr, "Memory mismatch at byte 0x%x. expected: %02x, found: %02x\n", b, elf_data[b], memory_data[b]);
+                return -1;
             }
         }
+
+        free(memory_data);
     }
 
     return 0;
