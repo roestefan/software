@@ -68,7 +68,7 @@ void terminal_ingress(struct osd_context *ctx, void* mod_arg,
                       uint16_t *packet) {
     struct terminal *term = (struct terminal *) mod_arg;
 
-    if (packet[1] == 3) {
+    if (packet[0] == 3) {
         uint8_t c = packet[3] & 0xff;
         int rv = write(term->socket, &c, 1);
         (void) rv;
