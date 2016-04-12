@@ -65,7 +65,9 @@ enum osd_module_types {
     OSD_MOD_HOST = 0,
     OSD_MOD_SCM = 1,
     OSD_MOD_DEM_UART = 2,
-    OSD_MOD_MAM = 3
+    OSD_MOD_MAM = 3,
+    OSD_MOD_STM = 4,
+    OSD_MOD_CTM = 5
 };
 
 struct osd_memory_descriptor {
@@ -120,6 +122,9 @@ int osd_get_memory_descriptor(struct osd_context *, uint16_t addr,
                               struct osd_memory_descriptor **desc);
 
 int osd_module_claim(struct osd_context *ctx, uint16_t addr);
+
+uint16_t osd_modid2addr(struct osd_context *ctx, uint16_t id);
+uint16_t osd_addr2modid(struct osd_context *ctx, uint16_t addr);
 
 enum osd_event_type {
     OSD_EVENT_PACKET = 1,

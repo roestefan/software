@@ -8,13 +8,15 @@
 
 static const size_t BULK_MAX = 0x3f00;
 
-static int memory_write_bulk(struct osd_context *ctx, uint16_t mod,
+static int memory_write_bulk(struct osd_context *ctx, uint16_t modid,
                              uint64_t addr,
                              uint8_t* data, size_t size) {
 
     if (size > BULK_MAX) {
         return -1;
     }
+
+    uint16_t modaddr = osd_modid2addr(ctx, modid);
 
     uint16_t psize = osd_get_max_pkt_len(ctx);
     uint16_t wordsperpacket = psize - 2;
@@ -23,7 +25,7 @@ static int memory_write_bulk(struct osd_context *ctx, uint16_t mod,
     uint16_t *packet = malloc((psize+1)*2);
 
     struct osd_memory_descriptor *mem;
-    mem = ctx->system_info->modules[mod].descriptor.memory;
+    mem = ctx->system_info->modules[modid].descriptor.memory;
 
     size_t hlen = 1; // control word
     hlen += ((mem->addr_width + 15) >> 4);
@@ -40,7 +42,7 @@ static int memory_write_bulk(struct osd_context *ctx, uint16_t mod,
 
     // Static for packets
     packet[0] = hlen + 2;
-    packet[1] = mod;
+    packet[1] = modaddr;
     packet[2] = 1 << 14;
 
     osd_send_packet(ctx, packet);
@@ -68,15 +70,16 @@ static int memory_write_bulk(struct osd_context *ctx, uint16_t mod,
     return 0;
 }
 
-static int memory_write_single(struct osd_context *ctx, uint16_t mod,
+static int memory_write_single(struct osd_context *ctx, uint16_t modid,
                                uint64_t addr, uint8_t* data, size_t size) {
+    uint16_t modaddr = osd_modid2addr(ctx, modid);
 
     uint16_t psize = osd_get_max_pkt_len(ctx);
 
     uint16_t *packet = malloc((psize+1)*2);
 
     struct osd_memory_descriptor *mem;
-    mem = ctx->system_info->modules[mod].descriptor.memory;
+    mem = ctx->system_info->modules[modid].descriptor.memory;
 
     size_t hlen = 1; // control word
     hlen += ((mem->addr_width + 15) >> 4);
@@ -105,7 +108,7 @@ static int memory_write_single(struct osd_context *ctx, uint16_t mod,
 
     // Static for packets
     packet[0] = hlen + 2 + blocksize/2;
-    packet[1] = mod;
+    packet[1] = modaddr;
     packet[2] = 1 << 14;
 
     uint8_t *block = calloc(1, blocksize);
@@ -139,16 +142,17 @@ static void memory_read_cb(struct osd_context *ctx, void* arg,
     }
 }
 
-static int memory_read_bulk(struct osd_context *ctx, uint16_t mod,
+static int memory_read_bulk(struct osd_context *ctx, uint16_t modid,
                             uint64_t addr,
                             uint8_t* data, size_t size) {
+    uint16_t modaddr = osd_modid2addr(ctx, modid);
     uint16_t psize = osd_get_max_pkt_len(ctx);
     size_t numwords = size/2;
 
     uint16_t *packet = malloc((psize+1)*2);
 
     struct osd_memory_descriptor *mem;
-    mem = ctx->system_info->modules[mod].descriptor.memory;
+    mem = ctx->system_info->modules[modid].descriptor.memory;
 
     size_t hlen = 1; // control word
     hlen += ((mem->addr_width + 15) >> 4);
@@ -163,12 +167,12 @@ static int memory_read_bulk(struct osd_context *ctx, uint16_t mod,
     if (mem->addr_width > 48)
         header[4] = (addr >> 48) & 0xffff;
 
-    osd_module_claim(ctx, mod);
-    osd_module_register_handler(ctx, mod, OSD_EVENT_PACKET, 0, memory_read_cb);
+    osd_module_claim(ctx, modid);
+    osd_module_register_handler(ctx, modid, OSD_EVENT_PACKET, 0, memory_read_cb);
 
     // Static for packets
     packet[0] = hlen + 2;
-    packet[1] = mod;
+    packet[1] = modaddr;
     packet[2] = 1 << 14;
 
     pthread_mutex_lock(&ctx->mem_access.lock);
@@ -200,10 +204,10 @@ static void calculate_parts(uint64_t addr, size_t size, size_t blocksize,
 }
 
 OSD_EXPORT
-int osd_memory_write(struct osd_context *ctx, uint16_t mod, uint64_t addr,
+int osd_memory_write(struct osd_context *ctx, uint16_t modid, uint64_t addr,
                      uint8_t* data, size_t size) {
     struct osd_memory_descriptor *mem;
-    mem = ctx->system_info->modules[mod].descriptor.memory;
+    mem = ctx->system_info->modules[modid].descriptor.memory;
 
     size_t blocksize = mem->data_width >> 3;
 
@@ -211,7 +215,7 @@ int osd_memory_write(struct osd_context *ctx, uint16_t mod, uint64_t addr,
     calculate_parts(addr, size, blocksize, &prolog, &bulk, &epilog);
 
     if (prolog) {
-        memory_write_single(ctx, mod, addr, data, prolog);
+        memory_write_single(ctx, modid, addr, data, prolog);
     }
 
     if (bulk) {
@@ -220,22 +224,22 @@ int osd_memory_write(struct osd_context *ctx, uint16_t mod, uint64_t addr,
 
             if ((i+s) > size) s = bulk - i;
 
-            memory_write_bulk(ctx, mod, addr+prolog+i, &data[prolog+i], s);
+            memory_write_bulk(ctx, modid, addr+prolog+i, &data[prolog+i], s);
         }
     }
 
     if (epilog) {
-        memory_write_single(ctx, mod, addr+prolog+bulk, &data[prolog+bulk], epilog);
+        memory_write_single(ctx, modid, addr+prolog+bulk, &data[prolog+bulk], epilog);
     }
 
     return 0;
 }
 
 OSD_EXPORT
-int osd_memory_read(struct osd_context *ctx, uint16_t mod, uint64_t addr,
+int osd_memory_read(struct osd_context *ctx, uint16_t modid, uint64_t addr,
                      uint8_t* data, size_t size) {
     struct osd_memory_descriptor *mem;
-    mem = ctx->system_info->modules[mod].descriptor.memory;
+    mem = ctx->system_info->modules[modid].descriptor.memory;
 
     size_t blocksize = mem->data_width >> 3;
 
@@ -244,7 +248,7 @@ int osd_memory_read(struct osd_context *ctx, uint16_t mod, uint64_t addr,
 
     if (prolog) {
         uint8_t *tmp = malloc(blocksize);
-        memory_read_bulk(ctx, mod, addr - blocksize + prolog, tmp, blocksize);
+        memory_read_bulk(ctx, modid, addr - blocksize + prolog, tmp, blocksize);
         memcpy(data, &tmp[blocksize-prolog], prolog);
         free(tmp);
     }
@@ -255,13 +259,13 @@ int osd_memory_read(struct osd_context *ctx, uint16_t mod, uint64_t addr,
 
             if ((i+s) > size) s = bulk - i;
 
-            memory_read_bulk(ctx, mod, addr + prolog + i, &data[prolog+i], s);
+            memory_read_bulk(ctx, modid, addr + prolog + i, &data[prolog+i], s);
         }
     }
 
     if (epilog) {
         uint8_t *tmp = malloc(blocksize);
-        memory_read_bulk(ctx, mod, addr + prolog + bulk, tmp, blocksize);
+        memory_read_bulk(ctx, modid, addr + prolog + bulk, tmp, blocksize);
         memcpy(&data[prolog+bulk], tmp, epilog);
         free(tmp);
     }
@@ -270,13 +274,11 @@ int osd_memory_read(struct osd_context *ctx, uint16_t mod, uint64_t addr,
 }
 
 OSD_EXPORT
-int osd_memory_loadelf(struct osd_context *ctx, uint16_t mod, char *filename) {
+int osd_memory_loadelf(struct osd_context *ctx, uint16_t modid, char *filename) {
     int fd;
     Elf *elf_object;
     size_t num;
     int rv;
-
-    printf("Open %s\n", filename);
 
     fd = open(filename, O_RDONLY , 0);
     if (fd < 0) {
@@ -289,8 +291,6 @@ int osd_memory_loadelf(struct osd_context *ctx, uint16_t mod, char *filename) {
         goto error_file;
     }
 
-    printf("Get elf object\n");
-
     elf_object = elf_begin(fd , ELF_C_READ , NULL);
     if (elf_object == NULL) {
         printf("%s\n", elf_errmsg(-1));
@@ -298,15 +298,11 @@ int osd_memory_loadelf(struct osd_context *ctx, uint16_t mod, char *filename) {
         goto error_file;
     }
 
-    printf("Get phdrnum\n");
-
     // Load program headers
     if (elf_getphdrnum(elf_object, &num)) {
         rv = -1;
         goto error_elf;
     }
-
-    printf("phdrnum = %zu\n", num);
 
     for (size_t i = 0; i < num; i++) {
         printf("Load program header %zu\n", i);
@@ -319,9 +315,7 @@ int osd_memory_loadelf(struct osd_context *ctx, uint16_t mod, char *filename) {
 
         data = elf_getdata_rawchunk(elf_object, phdr.p_offset, phdr.p_filesz, ELF_T_BYTE);
         if (data) {
-            printf("Load elf program header to %lx, size %zu\n", phdr.p_paddr, data->d_size);
-
-            osd_memory_write(ctx, mod, phdr.p_paddr, data->d_buf, data->d_size);
+            osd_memory_write(ctx, modid, phdr.p_paddr, data->d_buf, data->d_size);
         }
     }
 
@@ -338,7 +332,7 @@ int osd_memory_loadelf(struct osd_context *ctx, uint16_t mod, char *filename) {
         uint8_t *elf_data = data->d_buf;
 
         uint8_t *memory_data = malloc(data->d_size);
-        osd_memory_read(ctx, mod, phdr.p_paddr, memory_data, data->d_size);
+        osd_memory_read(ctx, modid, phdr.p_paddr, memory_data, data->d_size);
 
         for (size_t b = 0; b < data->d_size; b++) {
             if (memory_data[b] != elf_data[b]) {

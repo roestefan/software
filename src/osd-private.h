@@ -101,7 +101,7 @@ static const uint16_t modules_max_id = 4;
 struct module_types {
     const char *name;
 };
-extern const struct module_types module_lookup[4];
+extern const struct module_types module_lookup[6];
 
 struct module_callback {
     osd_incoming_handler call;

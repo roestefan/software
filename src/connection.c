@@ -55,7 +55,8 @@ void osd_handle_packet(struct osd_context *ctx, uint16_t *packet) {
 
         pthread_mutex_unlock(&ctx->reg_access.lock);
     } else {
-        uint16_t mod_id = packet[2] & 0x3ff;
+        uint16_t mod_id = osd_addr2modid(ctx, packet[2] & 0x3ff);
+
         size_t ev_size = (type & 0xf);
 
         if (size != ev_size + 2) {

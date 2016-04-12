@@ -2,22 +2,26 @@
 #include <libglip.h>
 #include <assert.h>
 
-const struct module_types module_lookup[4] = {
+const struct module_types module_lookup[6] = {
         { .name = "HOST" },
         { .name = "SCM" },
         { .name = "DEM - UART" },
-        { .name = "MAM" }
+        { .name = "MAM" },
+        { .name = "STM" },
+        { .name = "CTM" }
 };
+
+const uint16_t scmid = 0x1 << 3;
 
 int osd_system_enumerate(struct osd_context *ctx) {
     uint16_t mod1_id, mod_num;
-    osd_reg_read16(ctx, 1, 0, &mod1_id);
+    osd_reg_read16(ctx, scmid, 0, &mod1_id);
 
     if (mod1_id != 0x1) {
         return OSD_E_CANNOTENUMERATE;
     }
 
-    osd_reg_read16(ctx, 1, 0x201, &mod_num);
+    osd_reg_read16(ctx, scmid, 0x201, &mod_num);
     mod_num += 1;
 
     size_t size = sizeof(struct osd_system_info);
@@ -27,9 +31,9 @@ int osd_system_enumerate(struct osd_context *ctx) {
 
     ctx->system_info->num_modules = mod_num;
 
-    osd_reg_read16(ctx, 1, 0x200, &ctx->system_info->identifier);
+    osd_reg_read16(ctx, scmid, 0x200, &ctx->system_info->identifier);
 
-    osd_reg_read16(ctx, 1, 0x202, &ctx->system_info->max_pkt_len);
+    osd_reg_read16(ctx, scmid, 0x202, &ctx->system_info->max_pkt_len);
 
     ctx->system_info->modules[0].addr = 0;
     ctx->system_info->modules[0].type = 0;
@@ -37,46 +41,46 @@ int osd_system_enumerate(struct osd_context *ctx) {
 
     for (size_t i = 1; i < mod_num; i++) {
         struct osd_module_info *mod = &ctx->system_info->modules[i];
-        mod->addr = i;
-        osd_reg_read16(ctx, i, 0, &mod->type);
+        mod->addr = i << 3;
+        osd_reg_read16(ctx, mod->addr, 0, &mod->type);
         if (mod->type == OSD_MOD_MAM) {
             ctx->system_info->num_memories++;
 
             struct osd_memory_descriptor *mem;
 
             uint16_t tmp;
-            osd_reg_read16(ctx, i, 0x202, &tmp);
+            osd_reg_read16(ctx, mod->addr, 0x202, &tmp);
             assert (tmp <= 8);
 
             mem = calloc(1, sizeof(struct osd_memory_descriptor) + tmp*sizeof(uint64_t)*2);
             mod->descriptor.memory = mem;
             mem->num_regions = tmp;
 
-            osd_reg_read16(ctx, i, 0x200, &mem->data_width);
-            osd_reg_read16(ctx, i, 0x201, &mem->addr_width);
+            osd_reg_read16(ctx, mod->addr, 0x200, &mem->data_width);
+            osd_reg_read16(ctx, mod->addr, 0x201, &mem->addr_width);
 
             for (size_t j = 0; j < mem->num_regions; j++) {
                 uint16_t regbase = 0x280 + 16*j;
-                osd_reg_read16(ctx, i, regbase, &tmp);
+                osd_reg_read16(ctx, mod->addr, regbase, &tmp);
                 mem->regions[j].base_addr = tmp;
-                osd_reg_read16(ctx, i, regbase+1, &tmp);
+                osd_reg_read16(ctx, mod->addr, regbase+1, &tmp);
                 mem->regions[j].base_addr |= ((uint64_t) tmp << 16);
-                osd_reg_read16(ctx, i, regbase+2, &tmp);
+                osd_reg_read16(ctx, mod->addr, regbase+2, &tmp);
                 mem->regions[j].base_addr |= ((uint64_t) tmp << 32);
-                osd_reg_read16(ctx, i, regbase+3, &tmp);
+                osd_reg_read16(ctx, mod->addr, regbase+3, &tmp);
                 mem->regions[j].base_addr |= ((uint64_t) tmp << 48);
-                osd_reg_read16(ctx, i, regbase+4, &tmp);
+                osd_reg_read16(ctx, mod->addr, regbase+4, &tmp);
                 mem->regions[j].size = tmp;
-                osd_reg_read16(ctx, i, regbase+5, &tmp);
+                osd_reg_read16(ctx, mod->addr, regbase+5, &tmp);
                 mem->regions[j].size |= ((uint64_t) tmp << 16);
-                osd_reg_read16(ctx, i, regbase+6, &tmp);
+                osd_reg_read16(ctx, mod->addr, regbase+6, &tmp);
                 mem->regions[j].size |= ((uint64_t) tmp << 32);
-                osd_reg_read16(ctx, i, regbase+7, &tmp);
+                osd_reg_read16(ctx, mod->addr, regbase+7, &tmp);
                 mem->regions[j].size |= ((uint64_t) tmp << 48);
             }
         }
 
-        osd_reg_read16(ctx, i, 1, &mod->version);
+        osd_reg_read16(ctx, mod->addr, 1, &mod->version);
     }
 
     return OSD_SUCCESS;
@@ -155,9 +159,9 @@ int osd_get_module_name(struct osd_context *ctx, uint16_t id,
 }
 
 OSD_EXPORT
-int osd_print_module_info(struct osd_context *ctx, uint16_t addr,
+int osd_print_module_info(struct osd_context *ctx, uint16_t id,
                           FILE* fh, int indent) {
-    struct osd_module_info *mod = &ctx->system_info->modules[addr];
+    struct osd_module_info *mod = &ctx->system_info->modules[id];
 
     if (!mod) {
         return OSD_E_GENERIC;
@@ -206,3 +210,17 @@ int osd_module_is_terminal(struct osd_context *ctx, uint16_t id) {
     return OSD_SUCCESS;
 }
 
+OSD_EXPORT
+uint16_t osd_modid2addr(struct osd_context *ctx, uint16_t id) {
+    return ctx->system_info->modules[id].addr;
+}
+
+OSD_EXPORT
+uint16_t osd_addr2modid(struct osd_context *ctx, uint16_t addr) {
+    for (size_t i = 0; i < ctx->system_info->num_modules; i++) {
+        if (ctx->system_info->modules[i].addr == addr) {
+            return i;
+        }
+    }
+    return 0;
+}

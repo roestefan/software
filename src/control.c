@@ -63,12 +63,14 @@ int osd_reset_system(struct osd_context *ctx, int halt_cores) {
         return OSD_E_GENERIC;
     }
 
-    osd_reg_write16(ctx, scm, 0x203, 0x3);
+    uint16_t addr = osd_modid2addr(ctx, scm);
+
+    osd_reg_write16(ctx, addr, 0x203, 0x3);
 
     if (halt_cores) {
-        osd_reg_write16(ctx, scm, 0x203, 0x2);
+        osd_reg_write16(ctx, addr, 0x203, 0x2);
     } else {
-        osd_reg_write16(ctx, scm, 0x203, 0x0);
+        osd_reg_write16(ctx, addr, 0x203, 0x0);
     }
 
     return OSD_SUCCESS;
@@ -82,7 +84,9 @@ int osd_start_cores(struct osd_context *ctx) {
         return OSD_E_GENERIC;
     }
 
-    osd_reg_write16(ctx, scm, 0x203, 0x0);
+    uint16_t addr = osd_modid2addr(ctx, scm);
+
+    osd_reg_write16(ctx, addr, 0x203, 0x0);
 
     return OSD_SUCCESS;
 }
