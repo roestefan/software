@@ -1,0 +1,23 @@
+#!/usr/bin/env python
+
+"""
+setup.py file for SWIG example
+"""
+
+from distutils.core import setup, Extension
+
+
+opensocdebug_module = Extension('_opensocdebug',
+                                sources=['opensocdebug_wrap.c', '@top_srcdir@/src/bindings/python/osd_python.c'],
+                                libraries=['opensocdebug'],
+                                library_dirs = ['../../.libs']
+                                )
+
+setup (name         = '@PACKAGE_NAME@',
+       version      = '@PACKAGE_VERSION@',
+       author       = "OpenSoCDebug team",
+       description  = """Python bindings for OpenSoCDebug""",
+       ext_modules  = [opensocdebug_module],
+       py_modules   = ["opensocdebug"],
+       include_dirs = ['@top_srcdir@/src/include', '@top_srcdir@/src/bindings/python/']
+       )

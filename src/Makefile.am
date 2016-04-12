@@ -1,4 +1,4 @@
-SUBDIRS = . tools
+SUBDIRS = . bindings tools
 
 pkginclude_HEADERS = include/opensocdebug.h
 lib_LTLIBRARIES = libopensocdebug.la

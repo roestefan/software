@@ -51,20 +51,23 @@ AC_SUBST(LIBELF_LIBS)
 
 AC_CHECK_HEADER([elfutils/version.h],,AC_MSG_ERROR([Unable to find elfutils/version.h. You may need to install the elfutils development package.]))
 
-AC_ARG_ENABLE([python-interface],
-    AS_HELP_STRING([--enable-python-interface], [enable python interface (default n)]),
-    [use_python=$enableval],
-    [use_python=no])
+AC_ARG_ENABLE([python-bindings],
+    AS_HELP_STRING([--enable-python-bindings], [enable python bindings (default n)]),
+    [enable_python=$enableval],
+    [enable_python=no])
 
-AS_IF([test "x$use_python" = "xyes"], [
+AM_CONDITIONAL([HAVE_SWIG], [test "$SWIG"])
+AS_IF([test "x$enable_python" = "xyes"], [
+    AC_CHECK_PROG([SWIG], [swig], yes)
+    AS_IF([test "x$SWIG" != "xyes"],[AC_MSG_ERROR([Unable to find swig. Needed for python bindings.])])
     AM_PATH_PYTHON()
     PYTHON_LIBS=`python-config --libs`
     PYTHON_INCLUDES=`python-config --includes`
     AC_SUBST(PYTHON_LIBS)
     AC_SUBST(PYTHON_INCLUDES)
-    AC_DEFINE(USE_PYTHON, [1], [Define to use python interface])
+    AC_DEFINE(ENABLE_PYTHON, [1], [Define to use python bindings])
 ])
-AM_CONDITIONAL([USE_PYTHON], [test "x$use_python" != "xno"])
+AM_CONDITIONAL([ENABLE_PYTHON], [test "x$enable_python" != "xno"])
 
 AM_CFLAGS="-Wall \
     -Wmissing-declarations -Wmissing-prototypes \
@@ -94,6 +97,9 @@ AC_CONFIG_FILES([
         src/tools/daemon/Makefile
         src/tools/osd_term/Makefile
         src/tools/cli/Makefile
+        src/bindings/Makefile
+        src/bindings/python/Makefile
+        src/bindings/python/setup.py
 ])
 
 AC_OUTPUT
@@ -110,5 +116,5 @@ AC_MSG_RESULT([
         cflags:                 ${CFLAGS}
         ldflags:                ${LDFLAGS}
 
-        python interface:       ${use_python}
+        python bindings:        ${enable_python}
 ])
