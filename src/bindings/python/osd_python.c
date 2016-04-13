@@ -7,7 +7,7 @@
 
 struct osd_context *ctx = 0;
 
-void init() {
+void python_osd_init() {
     if (ctx == 0) {
         osd_new(&ctx, OSD_MODE_DAEMON, 0, 0);
 
@@ -23,11 +23,11 @@ void python_osd_reset(int halt) {
     osd_reset_system(ctx, halt);
 }
 
-void start(void) {
+void python_osd_start(void) {
     osd_start_cores(ctx);
 }
 
-void wait(int secs) {
+void python_osd_wait(int secs) {
     sleep(secs);
 }
 
