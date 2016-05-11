@@ -11,7 +11,7 @@ const struct module_types module_lookup[6] = {
         { .name = "CTM" }
 };
 
-const uint16_t scmid = 0x1 << 3;
+const uint16_t scmid = 0x1;
 
 int osd_system_enumerate(struct osd_context *ctx) {
     uint16_t mod1_id, mod_num;
@@ -41,7 +41,7 @@ int osd_system_enumerate(struct osd_context *ctx) {
 
     for (size_t i = 1; i < mod_num; i++) {
         struct osd_module_info *mod = &ctx->system_info->modules[i];
-        mod->addr = i << 3;
+        mod->addr = i;
         osd_reg_read16(ctx, mod->addr, 0, &mod->type);
         if (mod->type == OSD_MOD_MAM) {
             ctx->system_info->num_memories++;
