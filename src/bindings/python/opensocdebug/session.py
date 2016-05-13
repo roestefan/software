@@ -9,6 +9,8 @@ class Module(object):
 	def create(id, type):
 		if type == "MAM":
 			return Memory(id)
+		elif type == "STM":
+			return STM(id)
 		else:
 			return Module(id, type)
 	create = staticmethod(create)
@@ -25,6 +27,11 @@ class Memory(Module):
 	def loadelf(self, filename):
 		return python_osd_mem_loadelf(self.modid, filename)
 
+class STM(Module):
+	def __init__(self, id):
+		super(STM, self).__init__(id, "STM")
+	def log(self, filename):
+		python_osd_stm_log(self.modid, filename)
     
 class Session(object):
 	memories = []

@@ -51,6 +51,18 @@ static void print_help_mem_loadelf(void) {
     fprintf(stderr, "  memid  Module identifier of memory\n");
 }
 
+static void print_help_stm(void) {
+    fprintf(stderr, "Available subcommands:\n"                          );
+    fprintf(stderr, "  help        Print this help\n"                   );
+    fprintf(stderr, "  log         Log STM events to file\n"            );
+}
+
+static void print_help_stm_log(void) {
+    fprintf(stderr, "Usage: stm log <file> <stmid>\n"      );
+    fprintf(stderr, "  file   Filename to log to\n"        );
+    fprintf(stderr, "  stmid  STM to receive logs from\n"  );
+}
+
 static void print_help_wait(void) {
     fprintf(stderr, "Usage: wait <n>\n"         );
     fprintf(stderr, "  n  Number of seconds\n"  );
@@ -130,6 +142,42 @@ static int interpret(struct osd_context *ctx, char *line) {
                 return 0;
             }
             osd_memory_loadelf(ctx, mem, file);
+        }
+    } else if (CHECK_MATCH(cmd, "stm")) {
+        char *subcmd = strtok(NULL, " ");
+
+        if (CHECK_MATCH(subcmd, "help")) {
+            print_help_stm();
+        } else if (CHECK_MATCH(subcmd, "log")) {
+            subcmd = strtok(NULL, " ");
+
+            if (CHECK_MATCH(subcmd, "help")) {
+                print_help_stm_log();
+                return 0;
+            } else if (!subcmd){
+                fprintf(stderr, "Missing filename\n");
+                print_help_stm_log();
+                return 0;
+            }
+            char *file = subcmd;
+            char *sstm = strtok(NULL, " ");
+
+            if (!sstm) {
+                fprintf(stderr, "Missing STM id\n");
+                print_help_stm_log();
+                return 0;
+            }
+
+            errno = 0;
+            unsigned int stm = strtol(sstm, 0, 0);
+            if (errno != 0) {
+                fprintf(stderr, "Invalid STM id: %s\n", sstm);
+                print_help_stm_log();
+                return 0;
+            }
+            osd_stm_log(ctx, stm, file);
+        } else {
+            print_help_stm();
         }
     } else if (CHECK_MATCH(cmd, "wait")) {
         char *subcmd = strtok(NULL, " ");

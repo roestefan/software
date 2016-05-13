@@ -11,3 +11,4 @@ PyObject *python_osd_get_num_modules(void);
 PyObject *python_osd_get_module_name(uint16_t id);
 
 int python_osd_mem_loadelf(size_t modid, char* filename);
+int python_osd_stm_log(size_t modid, char* filename);

@@ -46,7 +46,7 @@ int osd_module_register_handler(struct osd_context *ctx, uint16_t id,
     if (type == OSD_EVENT_PACKET) {
         cb = &ctx->module_handlers[id]->packet_handler;
     } else {
-        return -1;
+        cb = &ctx->module_handlers[id]->packet_handler;
     }
 
     cb->call = handler;
@@ -102,5 +102,29 @@ int osd_module_unstall(struct osd_context *ctx, uint16_t id) {
     printf("UNSTALL\n");
     printf("to: %d\n", osd_modid2addr(ctx, id));
     osd_reg_write16(ctx, osd_modid2addr(ctx, id), OSD_REG_CS, OSD_CS_UNSTALL);
+    return 0;
+}
+
+static void stm_log_handler (struct osd_context *ctx, void* arg, uint16_t* packet) {
+    FILE *fh = (FILE*) arg;
+    uint32_t timestamp;
+    uint16_t id;
+    uint64_t value;
+
+    timestamp = (packet[4] << 16) | packet[3];
+    id = packet[5];
+    value = ((uint64_t)packet[9] << 48) | ((uint64_t)packet[8] << 32) | ((uint64_t)packet[7] << 16) | packet[6];
+
+    fprintf(fh, "%08x %04x %016lx\n", timestamp, id, value);
+    return;
+}
+
+OSD_EXPORT
+int osd_stm_log(struct osd_context *ctx, uint16_t modid, char *filename) {
+    FILE *fh = fopen(filename, "w");
+    osd_module_claim(ctx, modid);
+    osd_module_register_handler(ctx, modid, OSD_EVENT_TRACE, (void*) fh,
+                                stm_log_handler);
+    osd_module_unstall(ctx, modid);
     return 0;
 }
