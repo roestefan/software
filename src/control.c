@@ -234,7 +234,8 @@ int osd_ctm_log(struct osd_context *ctx, uint16_t modid, char *filename, char *e
                     GElf_Sym sym;
                     gelf_getsym(edata, i, &sym);
 
-                    if (ELF32_ST_TYPE(sym.st_info) == STT_FUNC) {
+                    if ((ELF32_ST_TYPE(sym.st_info) == STT_FUNC) ||
+                            (ELF32_ST_TYPE(sym.st_info) == STT_NOTYPE)) {
                         f++;
                     }
                 }
@@ -248,7 +249,8 @@ int osd_ctm_log(struct osd_context *ctx, uint16_t modid, char *filename, char *e
                     GElf_Sym sym;
                     gelf_getsym(edata, i, &sym);
 
-                    if (ELF32_ST_TYPE(sym.st_info) == STT_FUNC) {
+                    if ((ELF32_ST_TYPE(sym.st_info) == STT_FUNC) ||
+                            (ELF32_ST_TYPE(sym.st_info) == STT_NOTYPE)) {
                         tab[base+f].addr = sym.st_value;
                         tab[base+f].name = strdup(elf_strptr(elf_object, shdr.sh_link, sym.st_name));
                         f++;
