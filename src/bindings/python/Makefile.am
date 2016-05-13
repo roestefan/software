@@ -8,14 +8,16 @@ PKGSRCS = $(addprefix opensocdebug/,$(PKGFILES))
 all-local: $(SWIGGEN) $(PKGSRCS) setup.py
 	$(PYTHON) setup.py build
 
+opensocdebug:
+	mkdir -p opensocdebug
+
 install-exec-local: setup.py
 	$(PYTHON) setup.py install --prefix=$(prefix)
 
-$(SWIGGEN): $(SWIGFILE)
-	mkdir -p opensocdebug
+$(SWIGGEN): opensocdebug $(SWIGFILE)
 	swig -python -o opensocdebug_wrap.c -outdir opensocdebug $(srcdir)/$(SWIGFILE)
 
-opensocdebug/%.py: $(srcdir)/opensocdebug/%.py
+opensocdebug/%.py: $(srcdir)/module/%.py opensocdebug
 	cp $< $@
 	
 EXTRA_DIST = $(SWIGFILE) $(PKGSRCS)
