@@ -128,3 +128,37 @@ int osd_stm_log(struct osd_context *ctx, uint16_t modid, char *filename) {
     osd_module_unstall(ctx, modid);
     return 0;
 }
+
+struct ctm_log_handle {
+    FILE    *fh;
+};
+
+static void ctm_log_handler (struct osd_context *ctx, void* arg, uint16_t* packet) {
+    struct ctm_log_handle *log = (struct ctm_log_handle *) arg;
+    uint32_t timestamp;
+    uint8_t modechange, call, ret;
+    uint8_t mode;
+    uint64_t pc, npc;
+
+    timestamp = (packet[4] << 16) | packet[3];
+    npc = ((uint64_t)packet[8] << 48) | ((uint64_t)packet[7] << 32) | ((uint64_t)packet[6] << 16) | packet[5];
+    pc = ((uint64_t)packet[12] << 48) | ((uint64_t)packet[11] << 32) | ((uint64_t)packet[10] << 16) | packet[9];
+    modechange = (packet[13] >> 4) & 0x1;
+    call = (packet[13] >> 3) & 0x1;
+    ret = (packet[13] >> 2) & 0x1;
+    mode = packet[13] & 0x3;
+
+    fprintf(log->fh, "%08x %d %d %d %d %016lx %016lx\n", timestamp, modechange, call, ret, mode, pc, npc);
+    return;
+}
+
+OSD_EXPORT
+int osd_ctm_log(struct osd_context *ctx, uint16_t modid, char *filename, char *elffile) {
+    struct ctm_log_handle *log = malloc(sizeof(struct ctm_log_handle));
+    log->fh = fopen(filename, "w");
+    osd_module_claim(ctx, modid);
+    osd_module_register_handler(ctx, modid, OSD_EVENT_TRACE, (void*) log,
+                                ctm_log_handler);
+    osd_module_unstall(ctx, modid);
+    return 0;
+}

@@ -11,6 +11,8 @@ class Module(object):
 			return Memory(id)
 		elif type == "STM":
 			return STM(id)
+		elif type == "CTM":
+			return CTM(id)
 		else:
 			return Module(id, type)
 	create = staticmethod(create)
@@ -32,6 +34,15 @@ class STM(Module):
 		super(STM, self).__init__(id, "STM")
 	def log(self, filename):
 		python_osd_stm_log(self.modid, filename)
+
+class CTM(Module):
+	def __init__(self, id):
+		super(CTM, self).__init__(id, "CTM")
+	def log(self, filename, elffile = None):
+		if elffile:
+			python_osd_ctm_log_symbols(self.modid, filename, elffile)
+		else:
+			python_osd_ctm_log(self.modid, filename)
     
 class Session(object):
 	memories = []

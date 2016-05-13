@@ -151,6 +151,8 @@ int osd_memory_loadelf(struct osd_context *ctx, uint16_t mod, char *filename);
 
 int osd_stm_log(struct osd_context *ctx, uint16_t modid, char *filename);
 
+int osd_ctm_log(struct osd_context *ctx, uint16_t modid, char *filename, char* elffile);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

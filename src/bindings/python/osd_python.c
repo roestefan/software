@@ -52,3 +52,11 @@ int python_osd_mem_loadelf(size_t modid, char* filename) {
 int python_osd_stm_log(size_t modid, char* filename) {
     return osd_stm_log(ctx, modid, filename);
 }
+
+int python_osd_ctm_log(size_t modid, char* filename) {
+    return osd_ctm_log(ctx, modid, filename, 0);
+}
+
+int python_osd_ctm_log_symbols(size_t modid, char* filename, char* elffile) {
+    return osd_ctm_log(ctx, modid, filename, elffile);
+}
