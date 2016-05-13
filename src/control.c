@@ -150,6 +150,13 @@ static void ctm_log_handler (struct osd_context *ctx, void* arg, uint16_t* packe
     uint8_t mode;
     uint64_t pc, npc;
 
+    overflow = (packet[2] >> 11) & 0x1;
+
+    if (overflow) {
+        fprintf(log->fh, "Overflow, missed %d events\n", packet[3] & 0x3ff);
+        return;
+    }
+
     timestamp = (packet[4] << 16) | packet[3];
     npc = ((uint64_t)packet[8] << 48) | ((uint64_t)packet[7] << 32) | ((uint64_t)packet[6] << 16) | packet[5];
     pc = ((uint64_t)packet[12] << 48) | ((uint64_t)packet[11] << 32) | ((uint64_t)packet[10] << 16) | packet[9];
@@ -157,12 +164,6 @@ static void ctm_log_handler (struct osd_context *ctx, void* arg, uint16_t* packe
     call = (packet[13] >> 3) & 0x1;
     ret = (packet[13] >> 2) & 0x1;
     mode = packet[13] & 0x3;
-    overflow = (packet[2] >> 11) & 0x1;
-
-    if (overflow) {
-        fprintf(log->fh, "%08x Overflow, missed %d events\n", timestamp, packet[3] & 0x3ff);
-        return;
-    }
 
     if (!log->funcs) {
         fprintf(log->fh, "%08x %d %d %d %d %016lx %016lx\n", timestamp, modechange, call, ret, mode, pc, npc);
