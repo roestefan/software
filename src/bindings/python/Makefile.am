@@ -12,6 +12,7 @@ install-exec-local: setup.py
 	$(PYTHON) setup.py install	
 
 $(SWIGGEN): $(SWIGFILE)
+	mkdir -p opensocdebug
 	swig -python -o opensocdebug_wrap.c -outdir opensocdebug $(srcdir)/$(SWIGFILE)
 
 opensocdebug/%.py: $(srcdir)/opensocdebug/%.py
