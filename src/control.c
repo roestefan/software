@@ -245,7 +245,8 @@ int osd_ctm_log(struct osd_context *ctx, uint16_t modid, char *filename, char *e
                 log->num_funcs += f;
                 tab = realloc(tab, log->num_funcs * sizeof(struct elf_function_table));
 
-                for(size_t i = 0, f = 0; i < allsyms; i++)
+                f = 0;
+                for(size_t i = 0; i < allsyms; i++)
                 {
                     GElf_Sym sym;
                     gelf_getsym(edata, i, &sym);
@@ -264,7 +265,7 @@ int osd_ctm_log(struct osd_context *ctx, uint16_t modid, char *filename, char *e
 
         for (size_t i = 0; i < log->num_funcs; i++) {
             uint64_t min = -1;
-            struct elf_function_table *minp;
+            struct elf_function_table *minp = 0;
             for (size_t j = 0; j < log->num_funcs; j++) {
                 if (tab[j].addr < min) {
                     min = tab[j].addr;
