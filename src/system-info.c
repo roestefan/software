@@ -5,7 +5,7 @@
 const struct module_types module_lookup[6] = {
         { .name = "HOST" },
         { .name = "SCM" },
-        { .name = "DEM - UART" },
+        { .name = "DEM-UART" },
         { .name = "MAM" },
         { .name = "STM" },
         { .name = "CTM" }
