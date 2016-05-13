@@ -92,6 +92,7 @@ AC_SUBST(AM_LDFLAGS)
 AC_CONFIG_HEADERS(config.h)
 AC_CONFIG_FILES([
         Makefile
+        opensocdebug.pc
         src/Makefile
         src/tools/Makefile
         src/tools/daemon/Makefile
@@ -108,9 +109,10 @@ AC_MSG_RESULT([
         =====
 
         prefix:                 ${prefix}
-        sysconfdir:             ${sysconfdir}
         libdir:                 ${libdir}
         includedir:             ${includedir}
+        datarootdir:            ${datarootdir}
+        datadir:                ${datadir}
 
         compiler:               ${CC}
         cflags:                 ${CFLAGS}
