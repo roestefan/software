@@ -66,7 +66,7 @@ int main(int argc, char* argv[]) {
             osd_module_register_handler(ctx, i, OSD_EVENT_PACKET,
                                         term_arg, terminal_ingress);
 
-            osd_reg_write16(ctx, osd_modid2addr(ctx, i), 0x3, 0x1 << 11);
+            osd_module_unstall(ctx, i);
         }
     }
 

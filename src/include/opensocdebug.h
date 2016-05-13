@@ -112,6 +112,10 @@ int osd_get_module_name(struct osd_context *ctx, uint16_t addr,
 int osd_print_module_info(struct osd_context *ctx, uint16_t addr,
                           FILE *fd, int indent);
 
+static const uint16_t OSD_REG_CS = 0x3;
+static const uint16_t OSD_CS_STALL = 0x1 << 11 | 0x1;
+static const uint16_t OSD_CS_UNSTALL = 0x1 << 11;
+
 int osd_module_is_terminal(struct osd_context *ctx, uint16_t addr);
 
 int osd_get_scm(struct osd_context *ctx, uint16_t *addr);
@@ -137,6 +141,9 @@ typedef void (*osd_incoming_handler)(struct osd_context *ctx,
 int osd_module_register_handler(struct osd_context *ctx, uint16_t id,
                                 enum osd_event_type type, void *arg,
                                 osd_incoming_handler handler);
+
+int osd_module_stall(struct osd_context *ctx, uint16_t id);
+int osd_module_unstall(struct osd_context *ctx, uint16_t id);
 
 int osd_memory_write(struct osd_context *ctx, uint16_t mod, uint64_t addr, uint8_t* data, size_t size);
 int osd_memory_read(struct osd_context *ctx, uint16_t mod, uint64_t addr, uint8_t* data, size_t size);

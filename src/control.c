@@ -90,3 +90,17 @@ int osd_start_cores(struct osd_context *ctx) {
 
     return OSD_SUCCESS;
 }
+
+OSD_EXPORT
+int osd_module_stall(struct osd_context *ctx, uint16_t id) {
+    osd_reg_write16(ctx, osd_modid2addr(ctx, id), OSD_REG_CS, OSD_CS_STALL);
+    return 0;
+}
+
+OSD_EXPORT
+int osd_module_unstall(struct osd_context *ctx, uint16_t id) {
+    printf("UNSTALL\n");
+    printf("to: %d\n", osd_modid2addr(ctx, id));
+    osd_reg_write16(ctx, osd_modid2addr(ctx, id), OSD_REG_CS, OSD_CS_UNSTALL);
+    return 0;
+}
