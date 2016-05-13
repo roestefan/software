@@ -31,19 +31,18 @@ void python_osd_wait(int secs) {
     sleep(secs);
 }
 
-PyObject *python_osd_get_memories() {
-    uint16_t *ids;
-    size_t num;
-    osd_get_memories(ctx, &ids, &num);
+PyObject *python_osd_get_num_modules() {
+    uint16_t n;
+    osd_get_num_modules(ctx, &n);
+    return PyInt_FromLong(n);
+}
 
-    PyObject* list = PyList_New(num);
-
-    for (size_t i = 0; i < num; i++) {
-        PyObject *obj = PyInt_FromLong(ids[i]);
-        PyList_SetItem(list, i, obj);
-    }
-
-    return list;
+PyObject *python_osd_get_module_name(uint16_t id) {
+    char *name;
+    osd_get_module_name(ctx, id, &name);
+    PyObject *str = PyString_FromString(name);
+    free(name);
+    return str;
 }
 
 int python_osd_mem_loadelf(size_t modid, char* filename) {
