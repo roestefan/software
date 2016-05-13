@@ -63,6 +63,18 @@ static void print_help_stm_log(void) {
     fprintf(stderr, "  stmid  STM to receive logs from\n"  );
 }
 
+static void print_help_ctm(void) {
+    fprintf(stderr, "Available subcommands:\n"                          );
+    fprintf(stderr, "  help        Print this help\n"                   );
+    fprintf(stderr, "  log         Log CTM events to file\n"            );
+}
+
+static void print_help_ctm_log(void) {
+    fprintf(stderr, "Usage: ctm log <file> <ctmid>\n"      );
+    fprintf(stderr, "  file   Filename to log to\n"        );
+    fprintf(stderr, "  ctmid  CTM to receive logs from\n"  );
+}
+
 static void print_help_wait(void) {
     fprintf(stderr, "Usage: wait <n>\n"         );
     fprintf(stderr, "  n  Number of seconds\n"  );
@@ -176,6 +188,42 @@ static int interpret(struct osd_context *ctx, char *line) {
                 return 0;
             }
             osd_stm_log(ctx, stm, file);
+        } else {
+            print_help_stm();
+        }
+    } else if (CHECK_MATCH(cmd, "ctm")) {
+        char *subcmd = strtok(NULL, " ");
+
+        if (CHECK_MATCH(subcmd, "help")) {
+            print_help_ctm();
+        } else if (CHECK_MATCH(subcmd, "log")) {
+            subcmd = strtok(NULL, " ");
+
+            if (CHECK_MATCH(subcmd, "help")) {
+                print_help_ctm_log();
+                return 0;
+            } else if (!subcmd){
+                fprintf(stderr, "Missing filename\n");
+                print_help_ctm_log();
+                return 0;
+            }
+            char *file = subcmd;
+            char *sctm = strtok(NULL, " ");
+
+            if (!sctm) {
+                fprintf(stderr, "Missing STM id\n");
+                print_help_ctm_log();
+                return 0;
+            }
+
+            errno = 0;
+            unsigned int ctm = strtol(sctm, 0, 0);
+            if (errno != 0) {
+                fprintf(stderr, "Invalid CTM id: %s\n", sctm);
+                print_help_ctm_log();
+                return 0;
+            }
+            osd_ctm_log(ctx, ctm, file, 0);
         } else {
             print_help_stm();
         }
