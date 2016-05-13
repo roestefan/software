@@ -9,7 +9,7 @@ all-local: $(SWIGGEN) $(PKGSRCS) setup.py
 	$(PYTHON) setup.py build
 
 install-exec-local: setup.py
-	$(PYTHON) setup.py install	
+	$(PYTHON) setup.py install --prefix=$(prefix)
 
 $(SWIGGEN): $(SWIGFILE)
 	mkdir -p opensocdebug
