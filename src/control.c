@@ -4,6 +4,11 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#include <gelf.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
+
 #include "tools/daemon/daemon-packets.h"
 
 void control_init(struct osd_context *ctx) {
@@ -127,8 +132,15 @@ int osd_stm_log(struct osd_context *ctx, uint16_t modid, char *filename) {
     return 0;
 }
 
+struct elf_function_table {
+    uint64_t addr;
+    char     *name;
+};
+
 struct ctm_log_handle {
     FILE    *fh;
+    size_t num_funcs;
+    struct elf_function_table *funcs;
 };
 
 static void ctm_log_handler (struct osd_context *ctx, void* arg, uint16_t* packet) {
@@ -146,7 +158,47 @@ static void ctm_log_handler (struct osd_context *ctx, void* arg, uint16_t* packe
     ret = (packet[13] >> 2) & 0x1;
     mode = packet[13] & 0x3;
 
-    fprintf(log->fh, "%08x %d %d %d %d %016lx %016lx\n", timestamp, modechange, call, ret, mode, pc, npc);
+    fprintf(log->fh, "%08x %d %d %d %d %016lx %016lx", timestamp, modechange, call, ret, mode, pc, npc);
+    if (modechange) {
+        fprintf(log->fh, ", change mode to %d", mode);
+    } else {
+        if (call) {
+            fprintf(log->fh, ", enter ");
+            if (!log->funcs) {
+                fprintf(log->fh, "%016lx", npc);
+            } else {
+                int found = 0;
+                for (size_t f = 0; f < log->num_funcs; f++) {
+                    if (log->funcs[f].addr == npc) {
+                        fprintf(log->fh, "%s", log->funcs[f].name);
+                        found = 1;
+                        break;
+                    }
+                }
+                if (!found) {
+                    fprintf(log->fh, "%016lx", npc);
+                }
+            }
+        } else if (ret) {
+            fprintf(log->fh, ", leave ");
+            if (!log->funcs) {
+                fprintf(log->fh, "%016lx", pc);
+            } else {
+                int found = 0;
+                for (size_t f = 1; f < log->num_funcs; f++) {
+                    if (log->funcs[f].addr > pc) {
+                        fprintf(log->fh, "%s", log->funcs[f-1].name);
+                        found = 1;
+                        break;
+                    }
+                }
+                if (!found) {
+                    fprintf(log->fh, "%s", log->funcs[log->num_funcs-1].name);
+                }
+            }
+        }
+    }
+    fprintf(log->fh, "\n");
     return;
 }
 
@@ -154,6 +206,87 @@ OSD_EXPORT
 int osd_ctm_log(struct osd_context *ctx, uint16_t modid, char *filename, char *elffile) {
     struct ctm_log_handle *log = malloc(sizeof(struct ctm_log_handle));
     log->fh = fopen(filename, "w");
+
+    log->num_funcs = 0;
+    log->funcs = 0;
+    // Load the symbols from ELF
+    do {
+        struct elf_function_table *tab = 0;
+        int fd = open(elffile, O_RDONLY , 0);
+        if (fd < 0) {
+            break;
+        }
+
+        if (elf_version(EV_CURRENT) == EV_NONE) {
+           break;
+        }
+
+        Elf *elf_object = elf_begin(fd , ELF_C_READ , NULL);
+        if (elf_object == NULL) {
+            printf("%s\n", elf_errmsg(-1));
+            break;
+        }
+
+        Elf_Scn *sec = 0;
+        while((sec = elf_nextscn(elf_object, sec)) != NULL)
+        {
+            GElf_Shdr shdr;
+            gelf_getshdr(sec, &shdr);
+
+            if (shdr.sh_type == SHT_SYMTAB) {
+                Elf_Data *edata = 0;
+                edata = elf_getdata(sec, edata);
+
+                size_t allsyms = shdr.sh_size / shdr.sh_entsize;
+
+                size_t f = 0;
+                for(size_t i = 0; i < allsyms; i++)
+                {
+                    GElf_Sym sym;
+                    gelf_getsym(edata, i, &sym);
+
+                    if (ELF32_ST_TYPE(sym.st_info) == STT_FUNC) {
+                        f++;
+                    }
+                }
+
+                size_t base = log->num_funcs;
+                log->num_funcs += f;
+                tab = realloc(tab, log->num_funcs * sizeof(struct elf_function_table));
+
+                for(size_t i = 0, f = 0; i < allsyms; i++)
+                {
+                    GElf_Sym sym;
+                    gelf_getsym(edata, i, &sym);
+
+                    if (ELF32_ST_TYPE(sym.st_info) == STT_FUNC) {
+                        tab[base+f].addr = sym.st_value;
+                        tab[base+f].name = strdup(elf_strptr(elf_object, shdr.sh_link, sym.st_name));
+                        f++;
+                    }
+                }
+            }
+        }
+
+        log->funcs = malloc(sizeof(struct elf_function_table) * log->num_funcs);
+
+        for (size_t i = 0; i < log->num_funcs; i++) {
+            uint64_t min = -1;
+            struct elf_function_table *minp;
+            for (size_t j = 0; j < log->num_funcs; j++) {
+                if (tab[j].addr < min) {
+                    min = tab[j].addr;
+                    minp = &tab[j];
+                }
+            }
+            log->funcs[i].addr = minp->addr;
+            log->funcs[i].name = minp->name;
+            minp->addr = -1;
+        }
+
+        free(tab);
+    } while (0);
+
     osd_module_claim(ctx, modid);
     osd_module_register_handler(ctx, modid, OSD_EVENT_TRACE, (void*) log,
                                 ctm_log_handler);

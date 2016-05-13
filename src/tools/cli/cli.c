@@ -211,7 +211,7 @@ static int interpret(struct osd_context *ctx, char *line) {
             char *sctm = strtok(NULL, " ");
 
             if (!sctm) {
-                fprintf(stderr, "Missing STM id\n");
+                fprintf(stderr, "Missing CTM id\n");
                 print_help_ctm_log();
                 return 0;
             }
