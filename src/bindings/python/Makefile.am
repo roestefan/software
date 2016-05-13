@@ -21,3 +21,6 @@ opensocdebug/%.py: $(srcdir)/module/%.py opensocdebug
 	cp $< $@
 	
 EXTRA_DIST = $(SWIGFILE) $(PKGSRCS)
+
+examplesdir = $(datadir)/opensocdebug/examples
+examples_DATA = $(srcdir)/examples/runelf.py
