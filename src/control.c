@@ -146,7 +146,7 @@ struct ctm_log_handle {
 static void ctm_log_handler (struct osd_context *ctx, void* arg, uint16_t* packet) {
     struct ctm_log_handle *log = (struct ctm_log_handle *) arg;
     uint32_t timestamp;
-    uint8_t modechange, call, ret;
+    uint8_t modechange, call, ret, overflow;
     uint8_t mode;
     uint64_t pc, npc;
 
@@ -157,48 +157,37 @@ static void ctm_log_handler (struct osd_context *ctx, void* arg, uint16_t* packe
     call = (packet[13] >> 3) & 0x1;
     ret = (packet[13] >> 2) & 0x1;
     mode = packet[13] & 0x3;
+    overflow = (packet[2] >> 11) & 0x1;
 
-    fprintf(log->fh, "%08x %d %d %d %d %016lx %016lx", timestamp, modechange, call, ret, mode, pc, npc);
-    if (modechange) {
-        fprintf(log->fh, ", change mode to %d", mode);
+    if (overflow) {
+        fprintf(log->fh, "%08x Overflow, missed %d events\n", timestamp, packet[3] & 0x3ff);
+        return;
+    }
+
+    if (!log->funcs) {
+        fprintf(log->fh, "%08x %d %d %d %d %016lx %016lx\n", timestamp, modechange, call, ret, mode, pc, npc);
     } else {
-        if (call) {
-            fprintf(log->fh, ", enter ");
-            if (!log->funcs) {
-                fprintf(log->fh, "%016lx", npc);
-            } else {
-                int found = 0;
-                for (size_t f = 0; f < log->num_funcs; f++) {
-                    if (log->funcs[f].addr == npc) {
-                        fprintf(log->fh, "%s", log->funcs[f].name);
-                        found = 1;
-                        break;
-                    }
-                }
-                if (!found) {
-                    fprintf(log->fh, "%016lx", npc);
+        if (modechange) {
+            fprintf(log->fh, "%08x change mode to %d\n", timestamp, mode);
+        } else if (call) {
+            for (size_t f = 0; f < log->num_funcs; f++) {
+                if (log->funcs[f].addr == npc) {
+                    fprintf(log->fh, "%08x enter %s\n", timestamp, log->funcs[f].name);
+                    break;
                 }
             }
         } else if (ret) {
-            fprintf(log->fh, ", leave ");
-            if (!log->funcs) {
-                fprintf(log->fh, "%016lx", pc);
-            } else {
-                int found = 0;
-                for (size_t f = 1; f < log->num_funcs; f++) {
-                    if (log->funcs[f].addr > pc) {
-                        fprintf(log->fh, "%s", log->funcs[f-1].name);
-                        found = 1;
-                        break;
-                    }
+            for (size_t f = 1; f <= log->num_funcs; f++) {
+                if (log->funcs[f].addr > pc) {
+                    fprintf(log->fh, "%08x leave %s\n", timestamp, log->funcs[f-1].name);
+                    break;
                 }
-                if (!found) {
-                    fprintf(log->fh, "%s", log->funcs[log->num_funcs-1].name);
+                if (f == log->num_funcs) {
+                    fprintf(log->fh, "%08x leave %s\n", timestamp, log->funcs[log->num_funcs-1].name);
                 }
             }
         }
     }
-    fprintf(log->fh, "\n");
     return;
 }
 
