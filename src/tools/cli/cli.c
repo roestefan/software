@@ -75,9 +75,10 @@ static void print_help_ctm(void) {
 }
 
 static void print_help_ctm_log(void) {
-    fprintf(stderr, "Usage: ctm log <file> <ctmid>\n"      );
-    fprintf(stderr, "  file   Filename to log to\n"        );
-    fprintf(stderr, "  ctmid  CTM to receive logs from\n"  );
+    fprintf(stderr, "Usage: ctm log <file> <ctmid> <elffile>\n"  );
+    fprintf(stderr, "  file     Filename to log to\n"            );
+    fprintf(stderr, "  ctmid    CTM to receive logs from\n"      );
+    fprintf(stderr, "  elffile  ELF file to load symbols from\n" );
 }
 
 static void print_help_terminal(void) {
@@ -233,7 +234,13 @@ static int interpret(struct osd_context *ctx, char *line) {
                 print_help_ctm_log();
                 return 0;
             }
-            osd_ctm_log(ctx, ctm, file, 0);
+
+            char *elffile = strtok(NULL, " ");
+            if (elffile) {
+                osd_ctm_log(ctx, ctm, file, elffile);
+            } else {
+                osd_ctm_log(ctx, ctm, file, 0);
+            }
         } else {
             print_help_stm();
         }
