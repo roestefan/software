@@ -8,6 +8,8 @@
 #include <unistd.h>
 #include "cli.h"
 
+#include "terminal.h"
+
 static void print_help(void) {
     fprintf(stderr, "Usage: osd-cli <parameters>\n"                                        );
     fprintf(stderr, "\n"                                                                   );
@@ -19,14 +21,17 @@ static void print_help(void) {
 }
 
 static void print_help_commands(void) {
-    fprintf(stderr, "Available commands:\n"                    );
-    fprintf(stderr, "  help        Print this help\n"          );
-    fprintf(stderr, "  <cmd> help  Print help for command\n"   );
-    fprintf(stderr, "  quit        Exit the command line\n"    );
-    fprintf(stderr, "  reset       Reset the system\n"         );
-    fprintf(stderr, "  start       Start the processor cores\n");
-    fprintf(stderr, "  mem         Access memory\n"            );
-    fprintf(stderr, "  wait        Wait for given seconds\n"   );
+    fprintf(stderr, "Available commands:\n"                                      );
+    fprintf(stderr, "  help        Print this help\n"                            );
+    fprintf(stderr, "  <cmd> help  Print help for command\n"                     );
+    fprintf(stderr, "  quit        Exit the command line\n"                      );
+    fprintf(stderr, "  reset       Reset the system\n"                           );
+    fprintf(stderr, "  start       Start the processor cores\n"                  );
+    fprintf(stderr, "  mem         Access memory\n"                              );
+    fprintf(stderr, "  ctm         Configure core trace module\n"                );
+    fprintf(stderr, "  stm         Configure software trace module\n"            );
+    fprintf(stderr, "  terminal    Start terminal for device emulation module\n" );
+    fprintf(stderr, "  wait        Wait for given seconds\n"                     );
 }
 
 static void print_help_reset(void) {
@@ -73,6 +78,11 @@ static void print_help_ctm_log(void) {
     fprintf(stderr, "Usage: ctm log <file> <ctmid>\n"      );
     fprintf(stderr, "  file   Filename to log to\n"        );
     fprintf(stderr, "  ctmid  CTM to receive logs from\n"  );
+}
+
+static void print_help_terminal(void) {
+    fprintf(stderr, "Usage: terminal <id>\n"  );
+    fprintf(stderr, "  id  DEM-UART to use\n" );
 }
 
 static void print_help_wait(void) {
@@ -227,6 +237,42 @@ static int interpret(struct osd_context *ctx, char *line) {
         } else {
             print_help_stm();
         }
+    } else if (CHECK_MATCH(cmd, "terminal")) {
+        char *subcmd = strtok(NULL, " ");
+
+        if (CHECK_MATCH(subcmd, "help")) {
+            print_help_wait();
+            return 0;
+        }
+
+        if (!subcmd) {
+            fprintf(stderr, "Missing id\n");
+            print_help_terminal();
+            return 0;
+        }
+
+        errno = 0;
+        unsigned int id = strtol(subcmd, 0, 0);
+        if (errno != 0) {
+            fprintf(stderr, "Invalid id: %s\n", subcmd);
+            print_help_terminal();
+            return 0;
+        }
+
+        if (!osd_module_is_terminal(ctx, id)) {
+            fprintf(stderr, "No terminal at this id: %d\n", id);
+            print_help_terminal();
+            return 0;
+        }
+
+        struct terminal *term_arg;
+        terminal_open(&term_arg);
+
+        osd_module_claim(ctx, id);
+        osd_module_register_handler(ctx, id, OSD_EVENT_PACKET,
+                                    term_arg, terminal_ingress);
+
+        osd_module_unstall(ctx, id);
     } else if (CHECK_MATCH(cmd, "wait")) {
         char *subcmd = strtok(NULL, " ");
 

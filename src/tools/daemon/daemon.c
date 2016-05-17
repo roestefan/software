@@ -56,20 +56,6 @@ int main(int argc, char* argv[]) {
         free(name);
     }
 
-    for (int i = 0; i < num_modules; i++) {
-        if (osd_module_is_terminal(ctx, i)) {
-            INFO("Open terminal for module %d", i);
-            struct terminal *term_arg;
-            terminal_open(&term_arg);
-
-            osd_module_claim(ctx, i);
-            osd_module_register_handler(ctx, i, OSD_EVENT_PACKET,
-                                        term_arg, terminal_ingress);
-
-            osd_module_unstall(ctx, i);
-        }
-    }
-
     struct sockaddr_in serveraddr;
     int connsocket;
 

@@ -1,4 +1,4 @@
-#include "daemon.h"
+#include <opensocdebug.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,12 +9,7 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-struct terminal {
-    int socket_listen;
-    int socket;
-    char *path;
-    pid_t child;
-};
+#include "terminal.h"
 
 static int nxt_term_id = 0;
 
