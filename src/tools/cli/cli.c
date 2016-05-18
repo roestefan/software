@@ -10,86 +10,10 @@
 
 #include "terminal.h"
 
-static void print_help(void) {
-    fprintf(stderr, "Usage: osd-cli <parameters>\n"                                        );
-    fprintf(stderr, "\n"                                                                   );
-    fprintf(stderr, "Parameters:\n"                                                        );
-    fprintf(stderr, "  -h, --help                  Print this help\n"                      );
-    fprintf(stderr, "  -s <file>, --source=<file>  Read commands from file at start\n"     );
-    fprintf(stderr, "  -b <file>, --batch=<file>   Read commands from file and exit\n"     );
-    fprintf(stderr, "  --python                    Interpret -s and -b as python script\n" );
-}
+#include "help_strings.h"
 
-static void print_help_commands(void) {
-    fprintf(stderr, "Available commands:\n"                                      );
-    fprintf(stderr, "  help        Print this help\n"                            );
-    fprintf(stderr, "  <cmd> help  Print help for command\n"                     );
-    fprintf(stderr, "  quit        Exit the command line\n"                      );
-    fprintf(stderr, "  reset       Reset the system\n"                           );
-    fprintf(stderr, "  start       Start the processor cores\n"                  );
-    fprintf(stderr, "  mem         Access memory\n"                              );
-    fprintf(stderr, "  ctm         Configure core trace module\n"                );
-    fprintf(stderr, "  stm         Configure software trace module\n"            );
-    fprintf(stderr, "  terminal    Start terminal for device emulation module\n" );
-    fprintf(stderr, "  wait        Wait for given seconds\n"                     );
-}
-
-static void print_help_reset(void) {
-    fprintf(stderr, "Available parameters:\n"                           );
-    fprintf(stderr, "  -halt       Halt processor cores until 'start'\n");
-}
-
-static void print_help_start(void) {
-    fprintf(stderr, "Start cores after 'reset', no parameters\n");
-}
-
-static void print_help_mem(void) {
-    fprintf(stderr, "Available subcommands:\n"                          );
-    fprintf(stderr, "  help        Print this help\n"                   );
-    fprintf(stderr, "  test        Run memory tests\n"                  );
-    fprintf(stderr, "  loadelf     Load an elf to memory\n"             );
-}
-
-static void print_help_mem_loadelf(void) {
-    fprintf(stderr, "Usage: mem loadelf <file> <memid>\n"   );
-    fprintf(stderr, "  file   Filename to load\n"           );
-    fprintf(stderr, "  memid  Module identifier of memory\n");
-}
-
-static void print_help_stm(void) {
-    fprintf(stderr, "Available subcommands:\n"                          );
-    fprintf(stderr, "  help        Print this help\n"                   );
-    fprintf(stderr, "  log         Log STM events to file\n"            );
-}
-
-static void print_help_stm_log(void) {
-    fprintf(stderr, "Usage: stm log <file> <stmid>\n"      );
-    fprintf(stderr, "  file   Filename to log to\n"        );
-    fprintf(stderr, "  stmid  STM to receive logs from\n"  );
-}
-
-static void print_help_ctm(void) {
-    fprintf(stderr, "Available subcommands:\n"                          );
-    fprintf(stderr, "  help        Print this help\n"                   );
-    fprintf(stderr, "  log         Log CTM events to file\n"            );
-}
-
-static void print_help_ctm_log(void) {
-    fprintf(stderr, "Usage: ctm log <file> <ctmid> <elffile>\n"  );
-    fprintf(stderr, "  file     Filename to log to\n"            );
-    fprintf(stderr, "  ctmid    CTM to receive logs from\n"      );
-    fprintf(stderr, "  elffile  ELF file to load symbols from\n" );
-}
-
-static void print_help_terminal(void) {
-    fprintf(stderr, "Usage: terminal <id>\n"  );
-    fprintf(stderr, "  id  DEM-UART to use\n" );
-}
-
-static void print_help_wait(void) {
-    fprintf(stderr, "Usage: wait <n>\n"         );
-    fprintf(stderr, "  n  Number of seconds\n"  );
-}
+#define PRINT_HELP(name) \
+    fputs(help_ ## name, stderr);
 
 #define CHECK_MATCH(input, string) \
         (input && !strncmp(input, string, strlen(string)+1))
@@ -103,7 +27,7 @@ static int interpret(struct osd_context *ctx, char *line) {
 
     if (CHECK_MATCH(cmd, "help") ||
             CHECK_MATCH(cmd, "h")) {
-        print_help_commands();
+        PRINT_HELP(cmd);
     } else if (CHECK_MATCH(cmd, "quit") ||
             CHECK_MATCH(cmd, "q") ||
             CHECK_MATCH(cmd, "exit")) {
@@ -113,7 +37,7 @@ static int interpret(struct osd_context *ctx, char *line) {
         char *subcmd = strtok(NULL, " ");
 
         if (CHECK_MATCH(subcmd, "help")) {
-            print_help_reset();
+            PRINT_HELP(reset);
         } else if (CHECK_MATCH(subcmd, "-halt")) {
             haltcpus = 1;
         }
@@ -123,10 +47,10 @@ static int interpret(struct osd_context *ctx, char *line) {
         char *subcmd = strtok(NULL, " ");
 
         if (CHECK_MATCH(subcmd, "help")) {
-            print_help_start();
+            PRINT_HELP(start);
         } else if (subcmd) {
             fprintf(stderr, "No parameters accepted or unknown subcommand: %s", subcmd);
-            print_help_start();
+            PRINT_HELP(start);
         } else {
             osd_start_cores(ctx);
         }
@@ -134,18 +58,18 @@ static int interpret(struct osd_context *ctx, char *line) {
         char *subcmd = strtok(NULL, " ");
 
         if (CHECK_MATCH(subcmd, "help")) {
-            print_help_mem();
+            PRINT_HELP(mem);
         } else if (CHECK_MATCH(subcmd, "test")) {
             memory_tests(ctx);
         } else if (CHECK_MATCH(subcmd, "loadelf")) {
             subcmd = strtok(NULL, " ");
 
             if (CHECK_MATCH(subcmd, "help")) {
-                print_help_mem_loadelf();
+                PRINT_HELP(mem_loadelf);
                 return 0;
             } else if (!subcmd){
                 fprintf(stderr, "Missing filename\n");
-                print_help_mem_loadelf();
+                PRINT_HELP(mem_loadelf);
                 return 0;
             }
             char *file = subcmd;
@@ -153,7 +77,7 @@ static int interpret(struct osd_context *ctx, char *line) {
 
             if (!smem) {
                 fprintf(stderr, "Missing memory id\n");
-                print_help_mem_loadelf();
+                PRINT_HELP(mem_loadelf);
                 return 0;
             }
 
@@ -161,7 +85,7 @@ static int interpret(struct osd_context *ctx, char *line) {
             unsigned int mem = strtol(smem, 0, 0);
             if (errno != 0) {
                 fprintf(stderr, "Invalid memory id: %s\n", smem);
-                print_help_mem_loadelf();
+                PRINT_HELP(mem_loadelf);
                 return 0;
             }
             osd_memory_loadelf(ctx, mem, file);
@@ -170,16 +94,16 @@ static int interpret(struct osd_context *ctx, char *line) {
         char *subcmd = strtok(NULL, " ");
 
         if (CHECK_MATCH(subcmd, "help")) {
-            print_help_stm();
+            PRINT_HELP(stm);
         } else if (CHECK_MATCH(subcmd, "log")) {
             subcmd = strtok(NULL, " ");
 
             if (CHECK_MATCH(subcmd, "help")) {
-                print_help_stm_log();
+                PRINT_HELP(stm_log);
                 return 0;
             } else if (!subcmd){
                 fprintf(stderr, "Missing filename\n");
-                print_help_stm_log();
+                PRINT_HELP(stm_log);
                 return 0;
             }
             char *file = subcmd;
@@ -187,7 +111,7 @@ static int interpret(struct osd_context *ctx, char *line) {
 
             if (!sstm) {
                 fprintf(stderr, "Missing STM id\n");
-                print_help_stm_log();
+                PRINT_HELP(stm_log);
                 return 0;
             }
 
@@ -195,27 +119,27 @@ static int interpret(struct osd_context *ctx, char *line) {
             unsigned int stm = strtol(sstm, 0, 0);
             if (errno != 0) {
                 fprintf(stderr, "Invalid STM id: %s\n", sstm);
-                print_help_stm_log();
+                PRINT_HELP(stm_log);
                 return 0;
             }
             osd_stm_log(ctx, stm, file);
         } else {
-            print_help_stm();
+            PRINT_HELP(stm);
         }
     } else if (CHECK_MATCH(cmd, "ctm")) {
         char *subcmd = strtok(NULL, " ");
 
         if (CHECK_MATCH(subcmd, "help")) {
-            print_help_ctm();
+            PRINT_HELP(ctm);
         } else if (CHECK_MATCH(subcmd, "log")) {
             subcmd = strtok(NULL, " ");
 
             if (CHECK_MATCH(subcmd, "help")) {
-                print_help_ctm_log();
+                PRINT_HELP(ctm_log);
                 return 0;
             } else if (!subcmd){
                 fprintf(stderr, "Missing filename\n");
-                print_help_ctm_log();
+                PRINT_HELP(ctm_log);
                 return 0;
             }
             char *file = subcmd;
@@ -223,7 +147,7 @@ static int interpret(struct osd_context *ctx, char *line) {
 
             if (!sctm) {
                 fprintf(stderr, "Missing CTM id\n");
-                print_help_ctm_log();
+                PRINT_HELP(ctm_log);
                 return 0;
             }
 
@@ -231,7 +155,7 @@ static int interpret(struct osd_context *ctx, char *line) {
             unsigned int ctm = strtol(sctm, 0, 0);
             if (errno != 0) {
                 fprintf(stderr, "Invalid CTM id: %s\n", sctm);
-                print_help_ctm_log();
+                PRINT_HELP(ctm_log);
                 return 0;
             }
 
@@ -242,19 +166,19 @@ static int interpret(struct osd_context *ctx, char *line) {
                 osd_ctm_log(ctx, ctm, file, 0);
             }
         } else {
-            print_help_stm();
+            PRINT_HELP(ctm);
         }
     } else if (CHECK_MATCH(cmd, "terminal")) {
         char *subcmd = strtok(NULL, " ");
 
         if (CHECK_MATCH(subcmd, "help")) {
-            print_help_wait();
+            PRINT_HELP(terminal);
             return 0;
         }
 
         if (!subcmd) {
             fprintf(stderr, "Missing id\n");
-            print_help_terminal();
+            PRINT_HELP(terminal);
             return 0;
         }
 
@@ -262,13 +186,13 @@ static int interpret(struct osd_context *ctx, char *line) {
         unsigned int id = strtol(subcmd, 0, 0);
         if (errno != 0) {
             fprintf(stderr, "Invalid id: %s\n", subcmd);
-            print_help_terminal();
+            PRINT_HELP(terminal);
             return 0;
         }
 
         if (!osd_module_is_terminal(ctx, id)) {
             fprintf(stderr, "No terminal at this id: %d\n", id);
-            print_help_terminal();
+            PRINT_HELP(terminal);
             return 0;
         }
 
@@ -284,7 +208,7 @@ static int interpret(struct osd_context *ctx, char *line) {
         char *subcmd = strtok(NULL, " ");
 
         if (CHECK_MATCH(subcmd, "help")) {
-            print_help_wait();
+            PRINT_HELP(wait);
             return 0;
         }
 
@@ -300,7 +224,7 @@ static int interpret(struct osd_context *ctx, char *line) {
         }
     } else {
         fprintf(stderr, "Unknown command: %s\n", cmd);
-        print_help_commands();
+        PRINT_HELP(cmd);
     }
 
     return 0;
@@ -346,10 +270,10 @@ int main(int argc, char* argv[]) {
             fprintf(stderr, "Python not supported\n");
             break;
         case 'h':
-            print_help();
+            PRINT_HELP(param);
             return 0;
         default:
-            print_help();
+            PRINT_HELP(param);
             return -1;
         }
     }
