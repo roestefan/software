@@ -178,13 +178,33 @@ static void ctm_log_handler (struct osd_context *ctx, void* arg, uint16_t* packe
                 }
             }
         } else if (ret) {
+            char* to = 0;
             for (size_t f = 1; f <= log->num_funcs; f++) {
-                if (log->funcs[f].addr > pc) {
-                    fprintf(log->fh, "%08x leave %s\n", timestamp, log->funcs[f-1].name);
+                if (log->funcs[f].addr > npc) {
+                    to = log->funcs[f-1].name;
                     break;
                 }
                 if (f == log->num_funcs) {
-                    fprintf(log->fh, "%08x leave %s\n", timestamp, log->funcs[log->num_funcs-1].name);
+                    to = log->funcs[log->num_funcs-1].name;
+                }
+            }
+
+            for (size_t f = 1; f <= log->num_funcs; f++) {
+                if (log->funcs[f].addr == npc) {
+                    fprintf(log->fh, "%08x enter %s\n", timestamp, log->funcs[f].name);
+                    break;
+                }
+
+                if (log->funcs[f].addr > pc) {
+                    if (log->funcs[f-1].name != to) {
+                        fprintf(log->fh, "%08x leave %s\n", timestamp, log->funcs[f-1].name);
+                    }
+                    break;
+                }
+                if (f == log->num_funcs) {
+                    if (log->funcs[log->num_funcs-1].name != to) {
+                        fprintf(log->fh, "%08x leave %s\n", timestamp, log->funcs[log->num_funcs-1].name);
+                    }
                 }
             }
         }
