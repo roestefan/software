@@ -1,6 +1,6 @@
 
 SWIGFILE = opensocdebug.i
-SWIGGEN = opensocdebug_wrap.c opensocdebug.py
+SWIGGEN = opensocdebug.py
 
 PKGFILES = __init__.py session.py
 PKGSRCS = $(addprefix opensocdebug/,$(PKGFILES))
