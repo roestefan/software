@@ -7,7 +7,3 @@ osd_cli_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/src/include
 osd_cli_SOURCES = cli.c \
 	memory_test.c \
 	terminal.c
-
-if ENABLE_PYTHON
-    osd_cli_SOURCES += cli_python.c
-endif
