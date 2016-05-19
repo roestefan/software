@@ -10,7 +10,8 @@ libopensocdebug_la_SOURCES = context.c \
 	system-info.c \
 	regaccess.c \
 	control.c \
-	memory.c
+	memory.c \
+	trace.c
 
 libopensocdebug_la_LDFLAGS = $(AM_LDFLAGS) $(LTLDFLAGS) $(LIBELF_LIBS)
 libopensocdebug_la_CPPFLAGS = $(AM_CPPFLAGS) -include $(top_builddir)/config.h
