@@ -343,6 +343,13 @@ int osd_memory_loadelf(struct osd_context *ctx, uint16_t modid, char *filename) 
         if (data) {
             osd_memory_write(ctx, modid, phdr.p_paddr, data->d_buf, data->d_size);
         }
+
+        Elf32_Word init_with_zero = phdr.p_memsz - phdr.p_filesz;
+        if (init_with_zero > 0) {
+            void *zeroes = calloc(1, phdr.p_memsz - phdr.p_filesz);
+            osd_memory_write(ctx, modid, phdr.p_paddr + phdr.p_filesz, zeroes, init_with_zero);
+            free(zeroes);
+        }
     }
 
     for (size_t i = 0; i < num; i++) {
