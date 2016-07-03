@@ -28,15 +28,19 @@
 #define __TERMINAL_H__
 
 #include <stdint.h>
+#include <opensocdebug.h>
 
 struct terminal {
+    struct osd_context *ctx;
+    uint16_t mod_id;
+    pthread_t tx_thread;
     int socket_listen;
     int socket;
     char *path;
     pid_t child;
 };
 
-int terminal_open(struct terminal **term);
+int terminal_open(struct osd_context *ctx, uint16_t mod_id, struct terminal **term);
 
 void terminal_ingress(struct osd_context *ctx, void* mod_arg,
                       uint16_t *packet);

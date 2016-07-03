@@ -34,13 +34,36 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include <assert.h>
+#include <pthread.h>
 
 #include "terminal.h"
 
 static int nxt_term_id = 0;
 
-int terminal_open(struct terminal **term) {
+void *terminal_thread(void *arg);
+
+void *terminal_thread(void *arg) {
+    struct terminal *term = (struct terminal*) arg;
+    uint16_t packet[4];
+    packet[0] = 3;
+    packet[1] = term->mod_id;
+    packet[2] = OSD_EVENT_PACKET << 14;
+
+    while (1) {
+        int rv = read(term->socket, &packet[3], 1);
+        assert(rv == 1);
+        osd_send_packet(term->ctx, packet);
+    }
+
+    return 0;
+}
+
+int terminal_open(struct osd_context *ctx, uint16_t mod_id, struct terminal **term) {
     struct terminal *t = malloc(sizeof(struct terminal));
+    t->ctx = ctx;
+    t->mod_id = mod_id;
+
     *term = t;
 
     char name[128];
@@ -81,6 +104,8 @@ int terminal_open(struct terminal **term) {
         perror("accept");
         exit(1);
     }
+
+    pthread_create(&t->tx_thread, 0, terminal_thread, t);
 
     return 0;
 }

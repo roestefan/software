@@ -223,7 +223,7 @@ static int interpret(struct osd_context *ctx, char *line) {
         }
 
         struct terminal *term_arg;
-        terminal_open(&term_arg);
+        terminal_open(ctx, id, &term_arg);
 
         osd_module_claim(ctx, id);
         osd_module_register_handler(ctx, id, OSD_EVENT_PACKET,
