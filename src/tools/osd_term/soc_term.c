@@ -97,6 +97,16 @@ static void serve_fd(int fd)
     pfds[1].fd = fd;
     pfds[1].events = POLLIN;
 
+    struct termios old = {0};
+    if (tcgetattr(STDIN_FILENO, &old) < 0)
+            perror("tcsetattr()");
+    old.c_lflag &= ~ICANON;
+    old.c_lflag &= ~ECHO;
+    old.c_cc[VMIN] = 1;
+    old.c_cc[VTIME] = 0;
+    if (tcsetattr(STDIN_FILENO, TCSANOW, &old) < 0)
+            perror("tcsetattr ICANON");
+
 
     while (true) {
         int n;
@@ -105,7 +115,7 @@ static void serve_fd(int fd)
             err(1, "poll");
 
         if (pfds[0].revents & POLLIN) {
-            n = read(STDIN_FILENO, buf, sizeof(buf));
+            n = read(STDIN_FILENO, buf, 1);
             if (n == -1)
                 err(1, "read stdin");
             if (n == 0)
