@@ -300,7 +300,8 @@ int osd_memory_read(struct osd_context *ctx, uint16_t modid, uint64_t addr,
 }
 
 OSD_EXPORT
-int osd_memory_loadelf(struct osd_context *ctx, uint16_t modid, char *filename) {
+int osd_memory_loadelf(struct osd_context *ctx, uint16_t modid,
+                       char *filename, int verify) {
     int fd;
     Elf *elf_object;
     size_t num;
@@ -350,6 +351,10 @@ int osd_memory_loadelf(struct osd_context *ctx, uint16_t modid, char *filename) 
             osd_memory_write(ctx, modid, phdr.p_paddr + phdr.p_filesz, zeroes, init_with_zero);
             free(zeroes);
         }
+    }
+
+    if (!verify) {
+        return 0;
     }
 
     for (size_t i = 0; i < num; i++) {

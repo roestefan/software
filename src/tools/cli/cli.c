@@ -114,7 +114,7 @@ static int interpret(struct osd_context *ctx, char *line) {
                 PRINT_HELP(mem_loadelf);
                 return 0;
             }
-            osd_memory_loadelf(ctx, mem, file);
+            osd_memory_loadelf(ctx, mem, file, 0);
         }
     } else if (CHECK_MATCH(cmd, "stm")) {
         char *subcmd = strtok(NULL, " ");
