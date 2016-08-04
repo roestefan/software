@@ -49,7 +49,7 @@ AC_CHECK_LIB([elf], [elf_version], [
 ])
 AC_SUBST(LIBELF_LIBS)
 
-AC_CHECK_HEADER([elfutils/version.h],,AC_MSG_ERROR([Unable to find elfutils/version.h. You may need to install the elfutils development package.]))
+AC_CHECK_HEADER([elfutils/version.h],,AC_MSG_ERROR([Unable to find elfutils/version.h. You may need to install the libelf-dev development package.]))
 
 AC_ARG_ENABLE([python-bindings],
     AS_HELP_STRING([--enable-python-bindings], [enable python bindings (default n)]),
