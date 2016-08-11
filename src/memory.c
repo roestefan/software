@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <assert.h>
 
 static const size_t BULK_MAX = 0x3f00;
 
@@ -45,6 +46,11 @@ static int memory_write_bulk(struct osd_context *ctx, uint16_t modid,
     uint16_t modaddr = osd_modid2addr(ctx, modid);
 
     uint16_t psize = osd_get_max_pkt_len(ctx);
+
+    // The packet length must be at least 8 to store the header in the worst
+    // case
+    assert(psize >= 8);
+
     uint16_t wordsperpacket = psize - 2;
     size_t numwords = size/2;
 
@@ -101,6 +107,10 @@ static int memory_write_single(struct osd_context *ctx, uint16_t modid,
     uint16_t modaddr = osd_modid2addr(ctx, modid);
 
     uint16_t psize = osd_get_max_pkt_len(ctx);
+
+    // The packet length must be at least 8 to store the header in the worst
+    // case
+    assert(psize >= 8);
 
     uint16_t *packet = malloc((psize+1)*2);
 
@@ -173,6 +183,11 @@ static int memory_read_bulk(struct osd_context *ctx, uint16_t modid,
                             uint8_t* data, size_t size) {
     uint16_t modaddr = osd_modid2addr(ctx, modid);
     uint16_t psize = osd_get_max_pkt_len(ctx);
+
+    // The packet length must be at least 8 to store the header in the worst
+    // case
+    assert(psize >= 8);
+
     size_t numwords = size/2;
 
     uint16_t *packet = malloc((psize+1)*2);
